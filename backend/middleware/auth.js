@@ -2,7 +2,9 @@
 
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
-const config = require('../env');
+const config = {
+  JWT_SECRET: process.env.JWT_SECRET || 'your-fallback-secret-key'
+};
 
 // Get token from request (either from header or cookies)
 const getTokenFromRequest = (req) => {

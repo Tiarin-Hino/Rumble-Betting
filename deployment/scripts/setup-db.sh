@@ -62,7 +62,7 @@ db.users.updateOne(
     \$setOnInsert: {
       username: 'admin',
       email: 'admin@example.com',
-      password: '$2b$10\$XtGOcgsM6w5Th0qzQEPlr.KLNbGI3Qb6pN1iiT8K8UpBf9CXOuVMu', // 'adminpassword'
+      password: '$2b$10$X6YH2zuPHx/Ov0xDxrhKSOpvxKXpDngYg9cCv/8jJqTFOOtsNE0NG', // 'admin123'
       isVerified: true,
       registrationIP: '127.0.0.1',
       registrationDate: new Date(),

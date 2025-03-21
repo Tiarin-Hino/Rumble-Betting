@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 require('dotenv').config();
 
 // MongoDB connection URL (from environment variable or default)
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/virtual_betting';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://mongodb:27017/virtual_betting';
 
 // Connection options
 const connectOptions = {

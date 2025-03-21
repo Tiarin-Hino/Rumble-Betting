@@ -22,17 +22,22 @@ const Event = require('./models/event');
 const Bet = require('./models/bet');
 const IPRegistry = require('./models/ipRegistry');
 
-const cookieParser = require('cookie-parser');
-app.use(cookieParser());
-
 // Create Express app
 const app = express();
 const port = process.env.PORT || 3000;
 
 // Middleware
-app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, '../frontend/public')));
+
+const cookieParser = require('cookie-parser');
+app.use(cookieParser());
+
+const corsOptions = {
+  origin: process.env.FRONTEND_URL || 'http://localhost:8080',
+  credentials: true
+};
+app.use(cors(corsOptions));
 
 // Admin panel route
 app.get('/admin', (req, res) => {
@@ -45,6 +50,11 @@ app.use('/api/tournaments', tournamentRoutes); // Add tournament routes
 app.use('/api/events', eventRoutes);
 app.use('/api/bets', betRoutes);
 app.use('/api/health', healthRoutes);
+
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(500).json({ error: err.message });
+});
 
 // Root API route
 app.get('/api', (req, res) => {

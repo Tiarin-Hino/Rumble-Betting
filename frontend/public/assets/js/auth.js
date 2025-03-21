@@ -1,5 +1,3 @@
-// auth.js - Enhanced Authentication module
-
 // Configuration
 const AUTH_ENDPOINTS = {
   register: `${API_BASE_URL}/users/register`,
@@ -115,20 +113,35 @@ async function loginUser(credentials) {
       },
       body: JSON.stringify(credentials)
     });
-    
-    const data = await response.json();
-    
+
+    // Check for HTTP errors *before* parsing JSON
     if (!response.ok) {
-      throw new Error(data.error || 'Login failed');
+      // Attempt to read the response as text first, in case it's an HTML error page.
+      const text = await response.text();
+      let errorMessage = `HTTP Error: ${response.status} ${response.statusText}`;
+
+      // Try to parse as JSON, but handle potential errors.
+      try {
+          const errorData = JSON.parse(text);
+          errorMessage = errorData.message || errorMessage; // Prefer server's message
+      } catch (parseError) {
+        // If it's not JSON, use the text we read earlier (likely HTML)
+        errorMessage += `\nResponse Body: ${text}`; // Append the raw text to help debug
+      }
+      throw new Error(errorMessage);
     }
-    
+
+    // *Now* it's safe to parse as JSON, since we know it's a successful (2xx) response.
+    const data = await response.json();
+
     // Save user session data
     saveUserSession(data);
-    
+
     return data;
+
   } catch (error) {
     console.error('Login error:', error);
-    throw error;
+    throw error; // Re-throw the error so calling functions can handle it.
   }
 }
 
