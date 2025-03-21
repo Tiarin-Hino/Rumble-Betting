@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VirtualBet - Fun Betting Without Real Money</title>
+    <link rel="stylesheet" href="assets/css/main.css">
+    <link rel="icon" type="image/x-icon" href="assets/img/favicon.ico">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <h1>VirtualBet</h1>
+        <p>Fun betting without real money!</p>
+    </header>
+    
+    <!-- Update your navigation HTML to have a more consistent layout -->
+    <nav>
+        <div class="logo">VirtualBet</div>
+        <ul>
+          <li><a href="#" id="nav-home">Home</a></li>
+          <li><a href="#" id="nav-events">Events</a></li>
+          <li><a href="#" id="nav-leaderboard">Leaderboard</a></li>
+        
+          <!-- Authentication-based links (always keep the same structure) -->
+          <li class="auth-item" id="nav-mybets-container"><a href="#" id="nav-mybets">My Bets</a></li>
+          <li class="auth-item" id="login-container"><a href="#" id="login-btn">Login</a></li>
+          <li class="auth-item" id="register-container"><a href="#" id="register-btn">Register</a></li>
+          <li class="auth-item" id="logout-container"><a href="#" id="logout-btn">Logout</a></li>
+        </ul>
+      </nav>
+    
+    <main>
+        <!-- Home/Welcome Section -->
+        <section id="home-section">
+            <h2>Welcome to VirtualBet!</h2>
+            <p>Practice your betting skills without risking real money. Compete with friends and climb the leaderboard!</p>
+            
+            <div class="container">
+                <div class="card">
+                    <h2>How It Works</h2>
+                    <p>1. Register for an account</p>
+                    <p>2. Get 1000 virtual coins to start</p>
+                    <p>3. Place bets on upcoming events</p>
+                    <p>4. Win more coins and climb the leaderboard</p>
+                    <p>5. Have fun without financial risk!</p>
+                    <button class="btn-secondary" id="get-started-btn">Get Started</button>
+                </div>
+                
+                <div class="card" id="upcoming-events-preview">
+                    <h2>Upcoming Events</h2>
+                    <div id="home-events-container">
+                      <div class="loading">Loading events...</div>
+                    </div>
+                  </div>
+            </div>
+        </section>
+        
+        <!-- Events Section -->
+        <section id="events-section" class="hidden">
+            <h2>Betting Events</h2>
+            <p>Place your virtual bets on these upcoming events!</p>
+            
+            <div id="events-container">
+              <div class="loading">Loading events...</div>
+            </div>
+        
+        <!-- My Bets Section -->
+        <section id="mybets-section" class="hidden">
+            <h2>My Bets</h2>
+            <p>Track your betting activity and results</p>
+            
+            <div class="user-stats card">
+              <h3>Your Stats</h3>
+              <div class="stats-container">
+                <div class="stat">
+                  <span class="stat-value" id="user-coins">0</span>
+                  <span class="stat-label">Coins</span>
+                </div>
+                <div class="stat">
+                  <span class="stat-value" id="total-bets">0</span>
+                  <span class="stat-label">Total Bets</span>
+                </div>
+                <div class="stat">
+                  <span class="stat-value" id="win-rate">0%</span>
+                  <span class="stat-label">Win Rate</span>
+                </div>
+              </div>
+            </div>
+            
+            <div id="mybets-container">
+              <div class="loading">Loading your bets...</div>
+            </div>
+          </section>
+        
+        <!-- Leaderboard Section -->
+        <section id="leaderboard-section" class="hidden">
+            <h2>Leaderboard</h2>
+            <p>Top performers based on virtual coins earned</p>
+            
+            <div class="card">
+              <table class="leaderboard-table">
+                <thead>
+                  <tr>
+                    <th>Rank</th>
+                    <th>Player</th>
+                    <th>Virtual Coins</th>
+                    <th>Points Bet</th>
+                  </tr>
+                </thead>
+                <tbody id="leaderboard-body">
+                  <tr>
+                    <td colspan="4" class="loading">Loading leaderboard...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+        <!-- Event Details Section (Popup) -->
+        <section id="event-details" class="hidden">
+            <div class="event-details-container">
+                <!-- Event details will be loaded here dynamically -->
+            </div>
+        </section>
+    </main>
+    
+    <!-- Login Modal -->
+    <div id="login-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Login to Your Account</h2>
+            <div id="login-message" class="message hidden"></div>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="login-email">Email Address:</label>
+                    <input type="email" id="login-email" required>
+                    <div class="error"></div>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password:</label>
+                    <input type="password" id="login-password" required>
+                    <div class="error"></div>
+                </div>
+                <button type="submit">Login</button>
+                <p>Don't have an account? <a href="#" id="switch-to-register">Register here</a></p>
+                <p><a href="#" id="forgot-password">Forgot your password?</a></p>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Registration Modal -->
+    <div id="register-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Create a New Account</h2>
+            <div id="register-message" class="message hidden"></div>
+            <form id="register-form">
+                <div class="form-group">
+                    <label for="register-username">Username:</label>
+                    <input type="text" id="register-username" required>
+                    <div class="error"></div>
+                </div>
+                <div class="form-group">
+                    <label for="register-email">Email Address:</label>
+                    <input type="email" id="register-email" required>
+                    <div class="error"></div>
+                </div>
+                <div class="form-group">
+                    <label for="register-password">Password:</label>
+                    <input type="password" id="register-password" required>
+                    <div class="error"></div>
+                </div>
+                <div class="form-group">
+                    <label for="register-confirm-password">Confirm Password:</label>
+                    <input type="password" id="register-confirm-password" required>
+                    <div class="error"></div>
+                </div>
+                <button type="submit">Register</button>
+                <p>Already have an account? <a href="#" id="switch-to-login">Login here</a></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Reset Password Modal -->
+    <div id="reset-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Reset Your Password</h2>
+            <div id="reset-message" class="message hidden"></div>
+            <form id="reset-form">
+                <div class="form-group">
+                    <label for="reset-username">Username:</label>
+                    <input type="text" id="reset-username" required>
+                    <div class="error"></div>
+                </div>
+                <div class="form-group">
+                    <label for="reset-email">Email Address:</label>
+                    <input type="email" id="reset-email" required>
+                    <div class="error"></div>
+                </div>
+                <div class="form-group">
+                    <label for="reset-new-password">New Password:</label>
+                    <input type="password" id="reset-new-password" required>
+                    <div class="error"></div>
+                </div>
+                <div class="form-group">
+                    <label for="reset-confirm-password">Confirm New Password:</label>
+                    <input type="password" id="reset-confirm-password" required>
+                    <div class="error"></div>
+                </div>
+                <button type="submit">Reset Password</button>
+                <p><a href="#" id="back-to-login">Back to login</a></p>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Place Bet Modal -->
+    <div id="place-bet-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Place Your Bet</h2>
+            <div id="bet-message" class="message hidden"></div>
+            <div class="event-info">
+                <!-- Event info will be loaded here dynamically -->
+            </div>
+            <form id="place-bet-form">
+                <input type="hidden" id="bet-event-id">
+                <div class="form-group">
+                    <label for="bet-option">Your Prediction:</label>
+                    <select id="bet-option" required>
+                        <!-- Options will be loaded dynamically -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="bet-amount">Bet Amount:</label>
+                    <input type="number" id="bet-amount" min="10" value="50" required>
+                    <div class="error"></div>
+                </div>
+                <div class="bet-summary">
+                    <p>Potential Winnings: <span id="potential-winnings">0</span> coins</p>
+                    <p>Your Balance: <span id="user-balance">0</span> coins</p>
+                </div>
+                <button type="submit">Place Bet</button>
+            </form>
+        </div>
+    </div>
+    
+    <footer>
+        <p>&copy; 2025 VirtualBet - All Rights Reserved</p>
+        <p>This platform is for entertainment purposes only. No real money is involved.</p>
+    </footer>
+
+    <!-- JavaScript Files -->
+    <script>
+      // Check if user is admin
+      if (isAuthenticated() && getUserData().isAdmin) {
+        // Add admin panel link
+        document.getElementById('nav-items').innerHTML += `
+          <li class="nav-item">
+            <a href="/admin" class="nav-link">Admin Panel</a>
+          </li>
+        `;
+      }
+    </script>
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script src="assets/js/events.js"></script>
+    <script src="assets/js/bets.js"></script>
+    <script src="assets/js/main.js"></script>
+</body>
+</html>

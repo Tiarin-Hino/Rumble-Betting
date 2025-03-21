@@ -1,0 +1,120 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Virtual Betting Platform - Main Stack'
+
+Parameters:
+  DomainName:
+    Type: String
+    Description: Your main domain name (e.g., example.com)
+  
+  Subdomain:
+    Type: String
+    Description: Subdomain for the application (e.g., bet)
+  
+  ServiceName:
+    Type: String
+    Default: virtual-betting
+    Description: Name for the service
+  
+  ECRRepositoryName:
+    Type: String
+    Description: Name of the ECR repository
+  
+  MongoDBName:
+    Type: String
+    Description: Name of the MongoDB database
+  
+  MongoDBUsername:
+    Type: String
+    Description: Username for MongoDB
+  
+  MongoDBPassword:
+    Type: String
+    NoEcho: true
+    Description: Password for MongoDB
+  
+  TemplatesS3Bucket:
+    Type: String
+    Description: S3 bucket containing nested CloudFormation templates
+
+Resources:
+  # VPC and Network Resources
+  VPCStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${TemplatesS3Bucket}.s3.amazonaws.com/cloudformation/vpc.yaml
+      Parameters:
+        ServiceName: !Ref ServiceName
+
+  # Domain, Certificate, and DNS Resources
+  DomainStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${TemplatesS3Bucket}.s3.amazonaws.com/cloudformation/domain.yaml
+      Parameters:
+        DomainName: !Ref DomainName
+        Subdomain: !Ref Subdomain
+        ServiceName: !Ref ServiceName
+  
+  # S3 and CloudFront Resources
+  StaticAssetsStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${TemplatesS3Bucket}.s3.amazonaws.com/cloudformation/s3-cloudfront.yaml
+      Parameters:
+        ServiceName: !Ref ServiceName
+        DomainName: !Ref DomainName
+        Subdomain: !Ref Subdomain
+        CertificateArn: !GetAtt DomainStack.Outputs.CertificateArn
+  
+  # MongoDB Database Resources
+  DatabaseStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${TemplatesS3Bucket}.s3.amazonaws.com/cloudformation/rds.yaml
+      Parameters:
+        VpcId: !GetAtt VPCStack.Outputs.VpcId
+        PrivateSubnet1: !GetAtt VPCStack.Outputs.PrivateSubnet1
+        PrivateSubnet2: !GetAtt VPCStack.Outputs.PrivateSubnet2
+        ServiceName: !Ref ServiceName
+        MongoDBName: !Ref MongoDBName
+        MongoDBUsername: !Ref MongoDBUsername
+        MongoDBPassword: !Ref MongoDBPassword
+  
+  # ECS Resources
+  ECSStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${TemplatesS3Bucket}.s3.amazonaws.com/cloudformation/ecs.yaml
+      Parameters:
+        VpcId: !GetAtt VPCStack.Outputs.VpcId
+        PublicSubnet1: !GetAtt VPCStack.Outputs.PublicSubnet1
+        PublicSubnet2: !GetAtt VPCStack.Outputs.PublicSubnet2
+        ServiceName: !Ref ServiceName
+        ECRRepositoryName: !Ref ECRRepositoryName
+        MongoDBEndpoint: !GetAtt DatabaseStack.Outputs.MongoDBEndpoint
+        MongoDBName: !Ref MongoDBName
+        MongoDBUsername: !Ref MongoDBUsername
+        MongoDBPassword: !Ref MongoDBPassword
+        DomainName: !Sub ${Subdomain}.${DomainName}
+        CertificateArn: !GetAtt DomainStack.Outputs.CertificateArn
+
+Outputs:
+  CloudFrontDomain:
+    Description: CloudFront Distribution Domain
+    Value: !GetAtt StaticAssetsStack.Outputs.CloudFrontDomain
+  
+  MongoDBEndpoint:
+    Description: MongoDB Endpoint
+    Value: !GetAtt DatabaseStack.Outputs.MongoDBEndpoint
+  
+  ECSCluster:
+    Description: ECS Cluster Name
+    Value: !GetAtt ECSStack.Outputs.ECSCluster
+  
+  ECSService:
+    Description: ECS Service Name
+    Value: !GetAtt ECSStack.Outputs.ECSService
+  
+  WebsiteURL:
+    Description: URL of the deployed application
+    Value: !Sub https://${Subdomain}.${DomainName}
