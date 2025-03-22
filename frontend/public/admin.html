@@ -743,6 +743,7 @@
       if (modal) {
         modal.classList.remove('hidden');
         modal.style.display = 'flex';
+        modal.classList.add('visible');
 
         // Make sure the inner modal content is visible
         const modalContent = modal.querySelector('.modal');
@@ -937,6 +938,33 @@
 
       // Setup event listeners
       setupEventListeners(elements);
+
+      // Directly attach event listener to new match button for redundancy
+      const newMatchBtn = document.getElementById('new-match-btn');
+      if (newMatchBtn) {
+        newMatchBtn.addEventListener('click', function () {
+          console.log('New Match button clicked (direct)');
+          const tournamentSelect = document.getElementById('tournament-select');
+          const tournamentId = tournamentSelect ? tournamentSelect.value : null;
+
+          if (!tournamentId) {
+            alert('Please select a tournament first');
+            return;
+          }
+
+          // Reset form
+          const newMatchForm = document.getElementById('new-match-form');
+          if (newMatchForm) {
+            newMatchForm.reset();
+          }
+
+          // Show modal
+          showModal('new-match-modal');
+
+          // Fetch teams for the selected tournament
+          fetchTournamentTeams(tournamentId);
+        });
+      }
 
       // Load initial data
       fetchTournaments();
@@ -1153,53 +1181,29 @@
       });
 
       // New match button
-      elements.newMatchBtn.addEventListener('click', async () => {
-        const tournamentId = elements.tournamentSelect.value;
+      // New match button
+      if (elements.newMatchBtn) {
+        elements.newMatchBtn.addEventListener('click', function () {
+          console.log('New Match button clicked');
+          const tournamentId = elements.tournamentSelect.value;
 
-        if (!tournamentId) {
-          alert('Please select a tournament first');
-          return;
-        }
-
-        // Get tournament details for teams
-        try {
-          const response = await fetch(API.tournament(tournamentId), {
-            credentials: 'include'
-          });
-
-          if (!response.ok) {
-            throw new Error('Failed to fetch tournament details');
+          if (!tournamentId) {
+            alert('Please select a tournament first');
+            return;
           }
 
-          const data = await response.json();
-          const tournament = data.tournament;
-
-          // Populate team selects
-          elements.team1Select.innerHTML = '<option value="">Select Team 1</option>';
-          elements.team2Select.innerHTML = '<option value="">Select Team 2</option>';
-
-          tournament.teams.forEach(team => {
-            elements.team1Select.innerHTML += `<option value="${team.name}">${team.name}</option>`;
-            elements.team2Select.innerHTML += `<option value="${team.name}">${team.name}</option>`;
-          });
-
-          // Reset form and show modal
-          document.getElementById('new-match-form').reset();
-
-          // Make sure the modal is fully visible
-          elements.newMatchModal.classList.remove('hidden');
-          elements.newMatchModal.style.display = 'flex';
-
-          // Make sure the inner modal content is visible
-          const modalContent = elements.newMatchModal.querySelector('.modal');
-          if (modalContent) {
-            modalContent.style.display = 'block';
+          // Reset form
+          if (document.getElementById('new-match-form')) {
+            document.getElementById('new-match-form').reset();
           }
-        } catch (error) {
-          console.error('Error loading teams:', error);
-          alert(`Error: ${error.message}`);
-        }
-      });
+
+          // Show modal
+          showModal('new-match-modal');
+
+          // Fetch teams for the selected tournament
+          fetchTournamentTeams(tournamentId);
+        });
+      }
 
       // Create match
       elements.createMatchBtn.addEventListener('click', async () => {
@@ -1277,7 +1281,6 @@
       });
 
       // Set match result
-      // Ensure this event listener is properly set up
       elements.setMatchResultBtn.addEventListener('click', async () => {
         const matchId = elements.matchIdInput.value;
         const tournamentId = elements.tournamentSelect.value;
@@ -1294,23 +1297,20 @@
           elements.setMatchResultBtn.disabled = true;
           elements.setMatchResultBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
 
-          // Create result data
-          const resultData = {
-            winner,
-            score
-          };
-
           // Get token for authentication
           const token = getToken ? getToken() : localStorage.getItem('virtual_betting_token');
 
-          // Send request
+          // Send request using the matchResult API endpoint
           const response = await fetch(API.matchResult(tournamentId, matchId), {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': token ? `Bearer ${token}` : ''
             },
-            body: JSON.stringify(resultData),
+            body: JSON.stringify({
+              winner: winner,
+              score: score || undefined
+            }),
             credentials: 'include'
           });
 
@@ -1472,49 +1472,6 @@
         }
       });
 
-    }
-
-    function attachNewMatchButtonListener() {
-      const newMatchBtn = document.getElementById('new-match-btn');
-      if (newMatchBtn) {
-        console.log('Attaching listener to New Match button');
-
-        newMatchBtn.addEventListener('click', () => {
-          console.log('New Match button clicked');
-          const tournamentSelect = document.getElementById('tournament-select');
-          const tournamentId = tournamentSelect ? tournamentSelect.value : null;
-
-          if (!tournamentId) {
-            alert('Please select a tournament first');
-            return;
-          }
-
-          // Reset form
-          const newMatchForm = document.getElementById('new-match-form');
-          if (newMatchForm) {
-            newMatchForm.reset();
-          }
-
-          // Show modal
-          showModal('new-match-modal');
-
-          // Fetch teams for the selected tournament
-          fetchTournamentTeams(tournamentId);
-        });
-      } else {
-        console.error('New Match button not found in the DOM');
-      }
-    }
-
-    // Add the tab event listener and initial check here
-    document.querySelector('.tab[data-tab="matches"]').addEventListener('click', () => {
-      // This will run when the matches tab is clicked
-      setTimeout(attachNewMatchButtonListener, 500); // Give DOM time to update
-    });
-
-    // Also call it during initial load if we're on the matches tab
-    if (document.querySelector('.tab[data-tab="matches"]').classList.contains('active')) {
-      setTimeout(attachNewMatchButtonListener, 500);
     }
 
     // Fetch Tournament teams
