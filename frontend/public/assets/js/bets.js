@@ -1,5 +1,13 @@
 // Bets related functions
 
+  function getToken() {
+    return localStorage.getItem('virtual_betting_token');
+  }
+
+  function isAuthenticated() {
+    return localStorage.getItem('virtual_betting_auth_status') === 'true' && !!getUserData();
+  }
+
   // Load leaderboard data
   async function loadLeaderboard() {
     try {

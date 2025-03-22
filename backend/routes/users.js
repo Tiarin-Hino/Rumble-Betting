@@ -5,9 +5,7 @@ const { body, validationResult } = require('express-validator');
 const User = require('../models/user');
 const IPRegistry = require('../models/ipRegistry');
 const { isAuthenticated, isAdmin } = require('../middleware/auth');
-const { getClientIP, trackIPRegistration, registrationLimiter } = require('../middleware/ipRateLimit');
-const jwt = require('jsonwebtoken');
-const config = require('../env');
+const { getClientIP, trackIPRegistration, } = require('../middleware/ipRateLimit');
 
 // User Registration - Modified to handle bcrypt more reliably
 router.post('/register', [

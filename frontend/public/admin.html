@@ -6,8 +6,331 @@
   <title>Tournament Admin Panel</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="/assets/css/main.css">
+  <script src="/assets/js/config.js"></script>
+  <script src="/assets/js/auth.js"></script>
+  <style>
+    /* Additional styles to fix layout issues */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1rem;
+    }
+    
+    .tabs {
+      margin-bottom: 2rem;
+    }
+    
+    .tab-list {
+      display: flex;
+      list-style: none;
+      border-bottom: 1px solid #ddd;
+      padding: 0;
+      margin: 0;
+    }
+    
+    .tab {
+      padding: 0.75rem 1.5rem;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-right: 1rem;
+      font-weight: 500;
+    }
+    
+    .tab.active {
+      border-bottom-color: var(--primary);
+      color: var(--primary);
+    }
+    
+    .tab-content {
+      display: none;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    .d-flex {
+      display: flex;
+    }
+    
+    .justify-between {
+      justify-content: space-between;
+    }
+    
+    .align-center {
+      align-items: center;
+    }
+    
+    .mb-4 {
+      margin-bottom: 1.5rem;
+    }
+    
+    .mb-2 {
+      margin-bottom: 0.75rem;
+    }
+    
+    .grid {
+      display: grid;
+      gap: 1.5rem;
+    }
+    
+    .grid-2 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .grid-3 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .mt-4 {
+      margin-top: 1.5rem;
+    }
+    
+    .card-header {
+      border-bottom: 1px solid #eee;
+      padding-bottom: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    
+    .card-body {
+      margin-bottom: 1rem;
+    }
+    
+    .btn-sm {
+      padding: 0.25rem 0.75rem;
+      font-size: 0.875rem;
+    }
+    
+    .btn-outline {
+      background-color: transparent;
+      border: 1px solid var(--primary);
+      color: var(--primary);
+    }
+    
+    .btn-outline:hover {
+      background-color: var(--primary);
+      color: white;
+    }
+    
+    .btn-success {
+      background-color: var(--success);
+    }
+    
+    .btn-success:hover {
+      background-color: var(--success);
+      opacity: 0.9;
+    }
+    
+    .btn-danger {
+      background-color: var(--danger);
+    }
+    
+    .btn-danger:hover {
+      background-color: var(--danger);
+      opacity: 0.9;
+    }
+    
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      border-radius: 4px;
+      color: white;
+    }
+    
+    .badge-info {
+      background-color: var(--info);
+    }
+    
+    .badge-warning {
+      background-color: var(--warning);
+    }
+    
+    .badge-success {
+      background-color: var(--success);
+    }
+    
+    .badge-danger {
+      background-color: var(--danger);
+    }
+    
+    .text-center {
+      text-align: center;
+    }
+    
+    /* Modal styles */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    
+    .modal {
+      background-color: white;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+    
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .modal-body {
+      padding: 1.5rem;
+    }
+    
+    .modal-footer {
+      padding: 1rem 1.5rem;
+      border-top: 1px solid #eee;
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+    }
+    
+    .hidden {
+      display: none !important;
+    }
+    
+    /* Loading spinner */
+    .loading {
+      padding: 2rem;
+      text-align: center;
+    }
+    
+    .spinner {
+      display: inline-block;
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(0,0,0,0.1);
+      border-radius: 50%;
+      border-top-color: var(--primary);
+      animation: spin 1s infinite linear;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    #admin-login-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #f5f7fa;
+      z-index: 2000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .admin-login-container {
+      background-color: white;
+      border-radius: 8px;
+      padding: 2rem;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      width: 90%;
+      max-width: 400px;
+    }
+    
+    .admin-login-container h2 {
+      margin-bottom: 1.5rem;
+      text-align: center;
+      color: var(--primary);
+    }
+    
+    #admin-login-message {
+      margin-bottom: 1.5rem;
+      padding: 0.75rem;
+      border-radius: 4px;
+    }
+    
+    .admin-login-container .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal-backdrop.hidden {
+      display: none !important;
+    }
+
+    /* Force the modal to be visible when needed */
+    #new-tournament-modal:not(.hidden) {
+      display: flex !important;
+    }
+
+    #new-tournament-modal.modal-backdrop {
+      z-index: 2000 !important;
+      display: flex !important;
+      justify-content: center !important;
+      align-items: center !important;
+      background-color: rgba(0,0,0,0.5) !important;
+    }
+
+    #new-tournament-modal.modal-backdrop:not(.hidden) {
+      display: flex !important;
+    }
+
+    #new-tournament-modal .modal {
+      width: 90% !important;
+      max-width: 600px !important;
+      max-height: 80vh !important;
+      overflow-y: auto !important;
+      background-color: white !important;
+    }
+  </style>
 </head>
 <body>
+    <!-- Admin Login Overlay - This will be shown until authenticated -->
+    <div id="admin-login-overlay">
+      <div class="admin-login-container">
+        <h2>Admin Login Required</h2>
+        <div id="admin-login-message" class="hidden"></div>
+        <form id="admin-login-form">
+          <div class="form-group">
+            <label for="admin-email">Email Address:</label>
+            <input type="email" id="admin-email" required>
+          </div>
+          <div class="form-group">
+            <label for="admin-password">Password:</label>
+            <input type="password" id="admin-password" required>
+          </div>
+          <button type="submit" id="admin-login-button">Login as Admin</button>
+        </form>
+        <p style="text-align: center; margin-top: 1rem;">
+          <a href="/index.html">Return to Main Site</a>
+        </p>
+      </div>
+    </div>
     <header>
       <div class="container">
         <h1>Tournament Admin Panel</h1>
@@ -300,8 +623,30 @@
       </div>
     </div>
     
+    <script src="/assets/js/config.js"></script>
+    <script src="/assets/js/auth.js"></script>
     <script>
-      // API endpoints
+      // 1. Authentication helper functions
+      if (typeof isAuthenticated !== 'function') {
+        function isAuthenticated() {
+          return localStorage.getItem('virtual_betting_auth_status') === 'true' && !!getUserData();
+        }
+      }
+      
+      if (typeof getUserData !== 'function') {
+        function getUserData() {
+          const userData = localStorage.getItem('virtual_betting_user');
+          return userData ? JSON.parse(userData) : null;
+        }
+      }
+      
+      if (typeof getToken !== 'function') {
+        function getToken() {
+          return localStorage.getItem('virtual_betting_token');
+        }
+      }
+      
+      // 2. API endpoints definition
       const API = {
         tournaments: '/api/tournaments',
         tournament: (id) => `/api/tournaments/${id}`,
@@ -313,41 +658,7 @@
         eventsByType: (type) => `/api/events?type=${type}`
       };
       
-      // DOM elements
-      const elements = {
-        tabs: document.querySelectorAll('.tab'),
-        tabContents: document.querySelectorAll('.tab-content'),
-        tournamentListContainer: document.getElementById('tournament-list-container'),
-        tournamentDetails: document.getElementById('tournament-details'),
-        backToTournamentsBtn: document.getElementById('back-to-tournaments'),
-        newTournamentBtn: document.getElementById('new-tournament-btn'),
-        newTournamentModal: document.getElementById('new-tournament-modal'),
-        newTournamentForm: document.getElementById('new-tournament-form'),
-        createTournamentBtn: document.getElementById('create-tournament-btn'),
-        addTeamToFormBtn: document.getElementById('add-team-to-form-btn'),
-        teamFormTable: document.getElementById('team-form-table'),
-        teamFormList: document.getElementById('team-form-list'),
-        tournamentSelect: document.getElementById('tournament-select'),
-        matchListContainer: document.getElementById('match-list-container'),
-        newMatchBtn: document.getElementById('new-match-btn'),
-        newMatchModal: document.getElementById('new-match-modal'),
-        team1Select: document.getElementById('team1-select'),
-        team2Select: document.getElementById('team2-select'),
-        createMatchBtn: document.getElementById('create-match-btn'),
-        matchResultModal: document.getElementById('match-result-modal'),
-        matchWinnerSelect: document.getElementById('match-winner-select'),
-        matchIdInput: document.getElementById('match-id-input'),
-        setMatchResultBtn: document.getElementById('set-match-result-btn'),
-        overallWinnerListContainer: document.getElementById('overall-winner-list-container'),
-        closeButtons: document.querySelectorAll('[data-dismiss="modal"]'),
-        addTeamBtn: document.getElementById('add-team-btn'),
-        addTeamModal: document.getElementById('add-team-modal'),
-        tournamentIdInput: document.getElementById('tournament-id-input'),
-        addTeamToTournamentBtn: document.getElementById('add-team-to-tournament-btn'),
-        setResultsBtn: document.getElementById('set-results-btn')
-      };
-      
-      // State
+      // 3. State management
       let state = {
         tournaments: [],
         selectedTournament: null,
@@ -357,7 +668,7 @@
         overallWinnerEvents: []
       };
       
-      // Helper functions
+      // 4. Helper functions
       function formatDate(dateString) {
         if (!dateString) return 'N/A';
         const date = new Date(dateString);
@@ -385,406 +696,650 @@
         }
       }
       
-      // Tab navigation
-      elements.tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-          // Remove active class from all tabs and content
-          elements.tabs.forEach(t => t.classList.remove('active'));
-          elements.tabContents.forEach(c => c.classList.remove('active'));
-          
-          // Add active class to selected tab and content
-          tab.classList.add('active');
-          const tabId = tab.getAttribute('data-tab');
-          document.getElementById(tabId).classList.add('active');
-          
-          // Load data for the selected tab
-          if (tabId === 'tournaments') {
-            fetchTournaments();
-          } else if (tabId === 'matches') {
-            fetchTournamentSelectOptions();
-          } else if (tabId === 'overall-winners') {
-            fetchOverallWinnerEvents();
+      function getStatusClass(status) {
+        switch (status) {
+          case 'upcoming':
+            return 'info';
+          case 'active':
+            return 'warning';
+          case 'finished':
+            return 'success';
+          case 'cancelled':
+            return 'danger';
+          default:
+            return '';
+        }
+      }
+      
+      // 5. Main initialization
+      document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM loaded, initializing application');
+        
+        // Initialize DOM elements references
+        const elements = {
+          tabs: document.querySelectorAll('.tab'),
+          tabContents: document.querySelectorAll('.tab-content'),
+          tournamentListContainer: document.getElementById('tournament-list-container'),
+          tournamentDetails: document.getElementById('tournament-details'),
+          backToTournamentsBtn: document.getElementById('back-to-tournaments'),
+          newTournamentBtn: document.getElementById('new-tournament-btn'),
+          newTournamentModal: document.getElementById('new-tournament-modal'),
+          newTournamentForm: document.getElementById('new-tournament-form'),
+          createTournamentBtn: document.getElementById('create-tournament-btn'),
+          addTeamToFormBtn: document.getElementById('add-team-to-form-btn'),
+          teamFormTable: document.getElementById('team-form-table'),
+          teamFormList: document.getElementById('team-form-list'),
+          tournamentSelect: document.getElementById('tournament-select'),
+          matchListContainer: document.getElementById('match-list-container'),
+          newMatchBtn: document.getElementById('new-match-btn'),
+          newMatchModal: document.getElementById('new-match-modal'),
+          team1Select: document.getElementById('team1-select'),
+          team2Select: document.getElementById('team2-select'),
+          createMatchBtn: document.getElementById('create-match-btn'),
+          matchResultModal: document.getElementById('match-result-modal'),
+          matchWinnerSelect: document.getElementById('match-winner-select'),
+          matchIdInput: document.getElementById('match-id-input'),
+          setMatchResultBtn: document.getElementById('set-match-result-btn'),
+          overallWinnerListContainer: document.getElementById('overall-winner-list-container'),
+          closeButtons: document.querySelectorAll('[data-dismiss="modal"]'),
+          addTeamBtn: document.getElementById('add-team-btn'),
+          addTeamModal: document.getElementById('add-team-modal'),
+          tournamentIdInput: document.getElementById('tournament-id-input'),
+          addTeamToTournamentBtn: document.getElementById('add-team-to-tournament-btn'),
+          setResultsBtn: document.getElementById('set-results-btn')
+        };
+        
+        window.elements = elements; // Make elements accessible globally
+      
+        // Check if login overlay exists (login mode)
+        const adminLoginOverlay = document.getElementById('admin-login-overlay');
+        if (adminLoginOverlay) {
+          // Setup login form
+          const adminLoginForm = document.getElementById('admin-login-form');
+          if (adminLoginForm) {
+            adminLoginForm.addEventListener('submit', function(e) {
+              e.preventDefault();
+              
+              const email = document.getElementById('admin-email').value;
+              const password = document.getElementById('admin-password').value;
+              
+              if (!email || !password) {
+                alert('Please enter both email and password');
+                return;
+              }
+              
+              console.log('Attempting login with:', email);
+              
+              fetch('/api/users/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password }),
+                credentials: 'include'
+              })
+              .then(response => response.json())
+              .then(data => {
+                console.log('Login response:', data);
+                
+                if (data.error) {
+                  throw new Error(data.error);
+                }
+                
+                localStorage.setItem('virtual_betting_user', JSON.stringify(data.user));
+                localStorage.setItem('virtual_betting_token', data.token);
+                localStorage.setItem('virtual_betting_auth_status', 'true');
+                
+                if (!data.user || !data.user.isAdmin) {
+                  alert('You do not have admin privileges');
+                  return;
+                }
+                
+                adminLoginOverlay.style.display = 'none';
+                initAdminPanel(elements);
+              })
+              .catch(error => {
+                console.error('Login error:', error);
+                alert('Login failed: ' + error.message);
+              });
+            });
           }
-        });
+          
+          // Check if already logged in
+          if (isAuthenticated() && getUserData() && getUserData().isAdmin) {
+            adminLoginOverlay.style.display = 'none';
+            initAdminPanel(elements);
+          }
+        } else {
+          // Already in admin mode - verify permissions
+          if (!isAuthenticated()) {
+            window.location.href = '/index.html';
+            alert('You must be logged in as an administrator to access this page.');
+            return;
+          } else {
+            const userData = getUserData();
+            if (!userData || !userData.isAdmin) {
+              window.location.href = '/index.html';
+              alert('You do not have administrator privileges to access this page.');
+              return;
+            }
+            
+            // Initialize admin panel
+            initAdminPanel(elements);
+          }
+        }
       });
       
-      // Close modals
-      elements.closeButtons.forEach(button => {
-        button.addEventListener('click', () => {
-          const modal = button.closest('.modal-backdrop');
+      // 6. Admin panel initialization
+      function initAdminPanel(elements) {
+        console.log('Admin panel initialized');
+        
+        // Ensure all modals are initially hidden
+        document.querySelectorAll('.modal-backdrop').forEach(modal => {
           modal.classList.add('hidden');
-        });
-      });
-      
-      // Back to tournaments button
-      elements.backToTournamentsBtn.addEventListener('click', () => {
-        state.selectedTournament = null;
-        elements.tournamentDetails.classList.add('hidden');
-        elements.tournamentListContainer.classList.remove('hidden');
-      });
-      
-      // New tournament button
-      elements.newTournamentBtn.addEventListener('click', () => {
-        // Reset form
-        elements.newTournamentForm.reset();
-        state.newTournamentTeams = [];
-        renderNewTournamentTeams();
-        
-        // Show modal
-        elements.newTournamentModal.classList.remove('hidden');
-      });
-      
-      // Add team to new tournament form
-      elements.addTeamToFormBtn.addEventListener('click', () => {
-        const teamName = document.getElementById('team-name-input').value.trim();
-        const teamDescription = document.getElementById('team-description-input').value.trim();
-        
-        if (!teamName) {
-          alert('Team name is required');
-          return;
-        }
-        
-        // Add team to state
-        state.newTournamentTeams.push({
-          name: teamName,
-          description: teamDescription
+          modal.style.display = 'none';
         });
         
-        // Clear inputs
-        document.getElementById('team-name-input').value = '';
-        document.getElementById('team-description-input').value = '';
+        // Setup event listeners
+        setupEventListeners(elements);
         
-        // Render teams
-        renderNewTournamentTeams();
-      });
+        // Load initial data
+        fetchTournaments();
+      }
       
-      // Create tournament
-      elements.createTournamentBtn.addEventListener('click', async () => {
-        // Validate form
-        const name = document.getElementById('tournament-name-input').value.trim();
-        const description = document.getElementById('tournament-description-input').value.trim();
-        const startDate = document.getElementById('tournament-start-date-input').value;
-        const endDate = document.getElementById('tournament-end-date-input').value;
-        
-        if (!name || !startDate || !endDate) {
-          alert('Please fill in all required fields');
-          return;
-        }
-        
-        if (state.newTournamentTeams.length < 2) {
-          alert('Please add at least 2 teams');
-          return;
-        }
-        
-        // Create tournament data
-        const tournamentData = {
-          name,
-          description,
-          startDate,
-          endDate,
-          teams: state.newTournamentTeams
-        };
-        
-        try {
-          // Send request
-          const response = await fetch(API.tournaments, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(tournamentData)
+      // 7. Set up all event listeners
+      function setupEventListeners(elements) {
+        // Tab navigation
+        elements.tabs.forEach(tab => {
+          tab.addEventListener('click', () => {
+            // Remove active class from all tabs and content
+            elements.tabs.forEach(t => t.classList.remove('active'));
+            elements.tabContents.forEach(c => c.classList.remove('active'));
+            
+            // Add active class to selected tab and content
+            tab.classList.add('active');
+            const tabId = tab.getAttribute('data-tab');
+            const tabContent = document.getElementById(tabId);
+            if (tabContent) {
+              tabContent.classList.add('active');
+            }
+            
+            // Load data for the selected tab
+            if (tabId === 'tournaments') {
+              fetchTournaments();
+            } else if (tabId === 'matches') {
+              fetchTournamentSelectOptions();
+            } else if (tabId === 'overall-winners') {
+              fetchOverallWinnerEvents();
+            }
           });
-          
-          if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to create tournament');
-          }
-          
-          const data = await response.json();
-          
-          // Close modal
-          elements.newTournamentModal.classList.add('hidden');
-          
-          // Refresh tournaments
-          fetchTournaments();
-          
-          // Show success message
-          alert('Tournament created successfully!');
-        } catch (error) {
-          alert(`Error creating tournament: ${error.message}`);
-        }
-      });
-      
-      // Tournament select change
-      elements.tournamentSelect.addEventListener('change', async () => {
-        const tournamentId = elements.tournamentSelect.value;
+        });
         
-        if (!tournamentId) {
-          elements.newMatchBtn.disabled = true;
-          elements.matchListContainer.innerHTML = '<p class="text-center">Select a tournament to view matches</p>';
-          return;
-        }
-        
-        elements.newMatchBtn.disabled = false;
-        await fetchMatches(tournamentId);
-      });
-      
-      // New match button
-      elements.newMatchBtn.addEventListener('click', async () => {
-        const tournamentId = elements.tournamentSelect.value;
-        
-        if (!tournamentId) {
-          alert('Please select a tournament first');
-          return;
-        }
-        
-        // Get tournament details for teams
-        try {
-          const response = await fetch(API.tournament(tournamentId));
-          if (!response.ok) {
-            throw new Error('Failed to fetch tournament details');
-          }
-          
-          const data = await response.json();
-          const tournament = data.tournament;
-          
-          // Populate team selects
-          elements.team1Select.innerHTML = '<option value="">Select Team 1</option>';
-          elements.team2Select.innerHTML = '<option value="">Select Team 2</option>';
-          
-          tournament.teams.forEach(team => {
-            elements.team1Select.innerHTML += `<option value="${team.name}">${team.name}</option>`;
-            elements.team2Select.innerHTML += `<option value="${team.name}">${team.name}</option>`;
+        // Close modals
+        elements.closeButtons.forEach(button => {
+          button.addEventListener('click', () => {
+            const modal = button.closest('.modal-backdrop');
+            if (modal) {
+              modal.classList.add('hidden');
+              modal.style.display = 'none';
+            }
           });
-          
-          // Reset form and show modal
-          document.getElementById('new-match-form').reset();
-          elements.newMatchModal.classList.remove('hidden');
-        } catch (error) {
-          alert(`Error: ${error.message}`);
-        }
-      });
-      
-      // Create match
-      elements.createMatchBtn.addEventListener('click', async () => {
-        const tournamentId = elements.tournamentSelect.value;
-        const title = document.getElementById('match-title-input').value.trim();
-        const description = document.getElementById('match-description-input').value.trim();
-        const eventDate = document.getElementById('match-date-input').value;
-        const team1 = elements.team1Select.value;
-        const team2 = elements.team2Select.value;
+        });
         
-        // Validate form
-        if (!eventDate || !team1 || !team2) {
-          alert('Please fill in all required fields');
-          return;
-        }
-        
-        if (team1 === team2) {
-          alert('Team 1 and Team 2 must be different');
-          return;
-        }
-        
-        // Create match data
-        const matchData = {
-          title: title || `${team1} vs ${team2}`,
-          description,
-          eventDate,
-          team1,
-          team2
-        };
-        
-        try {
-          // Send request
-          const response = await fetch(API.tournamentMatches(tournamentId), {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(matchData)
+        // Also close modals when clicking on backdrop
+        document.querySelectorAll('.modal-backdrop').forEach(modal => {
+          modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+              this.classList.add('hidden');
+              this.style.display = 'none';
+            }
           });
-          
-          if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to create match');
-          }
-          
-          // Close modal
-          elements.newMatchModal.classList.add('hidden');
-          
-          // Refresh matches
-          fetchMatches(tournamentId);
-          
-          // Show success message
-          alert('Match created successfully!');
-        } catch (error) {
-          alert(`Error creating match: ${error.message}`);
-        }
-      });
-      
-      // Set match result
-      elements.setMatchResultBtn.addEventListener('click', async () => {
-        const matchId = elements.matchIdInput.value;
-        const tournamentId = elements.tournamentSelect.value;
-        const winner = elements.matchWinnerSelect.value;
-        const score = document.getElementById('match-score-input').value.trim();
+        });
         
-        if (!winner) {
-          alert('Please select a winner');
-          return;
-        }
-        
-        // Create result data
-        const resultData = {
-          winner,
-          score
-        };
-        
-        try {
-          // Send request
-          const response = await fetch(API.matchResult(tournamentId, matchId), {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(resultData)
+        // Back to tournaments button
+        if (elements.backToTournamentsBtn) {
+          elements.backToTournamentsBtn.addEventListener('click', () => {
+            state.selectedTournament = null;
+            elements.tournamentDetails.classList.add('hidden');
+            elements.tournamentListContainer.classList.remove('hidden');
           });
-          
-          if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to set match result');
-          }
-          
-          // Close modal
-          elements.matchResultModal.classList.add('hidden');
-          
-          // Refresh matches
-          fetchMatches(tournamentId);
-          
-          // Show success message
-          alert('Match result set successfully!');
-        } catch (error) {
-          alert(`Error setting match result: ${error.message}`);
-        }
-      });
-      
-      // Add team to existing tournament
-      elements.addTeamBtn.addEventListener('click', () => {
-        if (!state.selectedTournament) return;
-        
-        elements.tournamentIdInput.value = state.selectedTournament;
-        document.getElementById('new-team-name-input').value = '';
-        document.getElementById('new-team-description-input').value = '';
-        
-        elements.addTeamModal.classList.remove('hidden');
-      });
-      
-      // Add team to tournament
-      elements.addTeamToTournamentBtn.addEventListener('click', async () => {
-        const tournamentId = elements.tournamentIdInput.value;
-        const teamName = document.getElementById('new-team-name-input').value.trim();
-        const teamDescription = document.getElementById('new-team-description-input').value.trim();
-        
-        if (!teamName) {
-          alert('Team name is required');
-          return;
         }
         
-        try {
-          // First get existing teams
-          const response = await fetch(API.tournament(tournamentId));
-          if (!response.ok) {
-            throw new Error('Failed to fetch tournament');
-          }
-          
-          const data = await response.json();
-          const tournament = data.tournament;
-          
-          // Check if team name already exists
-          if (tournament.teams.some(team => team.name === teamName)) {
-            alert('A team with this name already exists in the tournament');
+        // New tournament button
+        if (elements.newTournamentBtn) {
+          elements.newTournamentBtn.addEventListener('click', () => {
+            // Reset form
+            if (elements.newTournamentForm) {
+              elements.newTournamentForm.reset();
+            }
+            state.newTournamentTeams = [];
+            renderNewTournamentTeams();
+            
+            // Show modal
+            if (elements.newTournamentModal) {
+              elements.newTournamentModal.classList.remove('hidden');
+              elements.newTournamentModal.style.display = 'flex';
+            }
+          });
+        }
+        
+        // Add team to form button
+        if (elements.addTeamToFormBtn) {
+          elements.addTeamToFormBtn.addEventListener('click', () => {
+            const teamName = document.getElementById('team-name-input').value.trim();
+            const teamDescription = document.getElementById('team-description-input').value.trim();
+            
+            if (!teamName) {
+              alert('Team name is required');
+              return;
+            }
+            
+            // Add team to state
+            state.newTournamentTeams.push({
+              name: teamName,
+              description: teamDescription
+            });
+            
+            // Clear inputs
+            document.getElementById('team-name-input').value = '';
+            document.getElementById('team-description-input').value = '';
+            
+            // Render teams
+            renderNewTournamentTeams();
+          });
+        }
+        
+        // Create tournament button
+        if (elements.createTournamentBtn) {
+          elements.createTournamentBtn.addEventListener('click', async () => {
+            // Validate form
+            const name = document.getElementById('tournament-name-input').value.trim();
+            const description = document.getElementById('tournament-description-input').value.trim();
+            const startDate = document.getElementById('tournament-start-date-input').value;
+            const endDate = document.getElementById('tournament-end-date-input').value;
+            
+            if (!name || !startDate || !endDate) {
+              alert('Please fill in all required fields');
+              return;
+            }
+            
+            if (state.newTournamentTeams.length < 2) {
+              alert('Please add at least 2 teams');
+              return;
+            }
+            
+            // Create tournament data
+            const tournamentData = {
+              name,
+              description,
+              startDate,
+              endDate,
+              teams: state.newTournamentTeams
+            };
+            
+            try {
+              console.log('Creating tournament with data:', tournamentData);
+              
+              // Get token from authentication
+              const token = getToken ? getToken() : localStorage.getItem('virtual_betting_token');
+              
+              // Send request
+              const response = await fetch(API.tournaments, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': token ? `Bearer ${token}` : ''
+                },
+                body: JSON.stringify(tournamentData),
+                credentials: 'include'
+              });
+              
+              if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to create tournament');
+              }
+              
+              const data = await response.json();
+              console.log('Tournament created successfully:', data);
+              
+              // Close modal
+              elements.newTournamentModal.classList.add('hidden');
+              elements.newTournamentModal.style.display = 'none';
+              
+              // Refresh tournaments
+              fetchTournaments();
+              
+              // Show success message
+              alert('Tournament created successfully!');
+            } catch (error) {
+              console.error('Error creating tournament:', error);
+              alert(`Error creating tournament: ${error.message}`);
+            }
+          });
+        }
+        
+        // Tournament select change
+        if (elements.tournamentSelect) {
+          elements.tournamentSelect.addEventListener('change', async () => {
+            const tournamentId = elements.tournamentSelect.value;
+            
+            if (!tournamentId) {
+              elements.newMatchBtn.disabled = true;
+              elements.matchListContainer.innerHTML = '<p class="text-center">Select a tournament to view matches</p>';
+              return;
+            }
+            
+            elements.newMatchBtn.disabled = false;
+            await fetchMatches(tournamentId);
+          });
+        }
+      
+        // Tournament select change
+        elements.tournamentSelect.addEventListener('change', async () => {
+          const tournamentId = elements.tournamentSelect.value;
+
+          if (!tournamentId) {
+            elements.newMatchBtn.disabled = true;
+            elements.matchListContainer.innerHTML = '<p class="text-center">Select a tournament to view matches</p>';
             return;
           }
-          
-          // Add new team to existing teams
-          const updatedTeams = [
-            ...tournament.teams,
-            { name: teamName, description: teamDescription }
-          ];
-          
-          // Update teams
-          const updateResponse = await fetch(API.tournamentTeams(tournamentId), {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ teams: updatedTeams })
-          });
-          
-          if (!updateResponse.ok) {
-            const error = await updateResponse.json();
-            throw new Error(error.error || 'Failed to update teams');
+
+          elements.newMatchBtn.disabled = false;
+          await fetchMatches(tournamentId);
+        });
+
+        // New match button
+        elements.newMatchBtn.addEventListener('click', async () => {
+          const tournamentId = elements.tournamentSelect.value;
+
+          if (!tournamentId) {
+            alert('Please select a tournament first');
+            return;
           }
-          
-          // Close modal
-          elements.addTeamModal.classList.add('hidden');
-          
-          // Refresh tournament details
-          fetchTournamentDetails(tournamentId);
-          
-          // Show success message
-          alert('Team added successfully!');
-        } catch (error) {
-          alert(`Error adding team: ${error.message}`);
-        }
-      });
-      
-      // Set tournament results
-      elements.setResultsBtn.addEventListener('click', async () => {
-        if (!state.selectedTournament || !state.tournamentDetails) return;
-        
-        // Get rankings from form
-        const rankingInputs = document.querySelectorAll('.ranking-input');
-        const rankings = [];
-        
-        rankingInputs.forEach(input => {
-          const teamName = input.getAttribute('data-team');
-          const rank = parseInt(input.value);
-          
-          if (teamName && !isNaN(rank) && rank > 0) {
-            rankings.push({ teamName, rank });
+
+          // Get tournament details for teams
+          try {
+            const response = await fetch(API.tournament(tournamentId), {
+              credentials: 'include'
+            });
+
+            if (!response.ok) {
+              throw new Error('Failed to fetch tournament details');
+            }
+
+            const data = await response.json();
+            const tournament = data.tournament;
+
+            // Populate team selects
+            elements.team1Select.innerHTML = '<option value="">Select Team 1</option>';
+            elements.team2Select.innerHTML = '<option value="">Select Team 2</option>';
+
+            tournament.teams.forEach(team => {
+              elements.team1Select.innerHTML += `<option value="${team.name}">${team.name}</option>`;
+              elements.team2Select.innerHTML += `<option value="${team.name}">${team.name}</option>`;
+            });
+
+            // Reset form and show modal
+            document.getElementById('new-match-form').reset();
+            elements.newMatchModal.classList.remove('hidden');
+          } catch (error) {
+            alert(`Error: ${error.message}`);
           }
         });
-        
-        if (rankings.length !== state.tournamentDetails.teams.length) {
-          alert('Please provide rankings for all teams');
-          return;
-        }
-        
-        try {
-          // Send request
-          const response = await fetch(API.tournamentResults(state.selectedTournament), {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ rankings })
-          });
-          
-          if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to set tournament results');
+
+        // Create match
+        elements.createMatchBtn.addEventListener('click', async () => {
+          const tournamentId = elements.tournamentSelect.value;
+          const title = document.getElementById('match-title-input').value.trim();
+          const description = document.getElementById('match-description-input').value.trim();
+          const eventDate = document.getElementById('match-date-input').value;
+          const team1 = elements.team1Select.value;
+          const team2 = elements.team2Select.value;
+
+          // Validate form
+          if (!eventDate || !team1 || !team2) {
+            alert('Please fill in all required fields');
+            return;
           }
-          
-          // Refresh tournament details
-          fetchTournamentDetails(state.selectedTournament);
-          
-          // Show success message
-          alert('Tournament results set successfully!');
-        } catch (error) {
-          alert(`Error setting tournament results: ${error.message}`);
-        }
-      });
+
+          if (team1 === team2) {
+            alert('Team 1 and Team 2 must be different');
+            return;
+          }
+
+          // Create match data
+          const matchData = {
+            title: title || `${team1} vs ${team2}`,
+            description,
+            eventDate,
+            team1,
+            team2
+          };
+
+          try {
+            console.log('Creating match with data:', matchData);
+
+            // Get token from authentication
+            const token = getToken ? getToken() : localStorage.getItem('virtual_betting_token');
+
+            // Send request
+            const response = await fetch(API.tournamentMatches(tournamentId), {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': token ? `Bearer ${token}` : ''
+              },
+              body: JSON.stringify(matchData),
+              credentials: 'include'
+            });
+
+            if (!response.ok) {
+              const error = await response.json();
+              throw new Error(error.error || 'Failed to create match');
+            }
+
+            // Close modal
+            elements.newMatchModal.classList.add('hidden');
+
+            // Refresh matches
+            fetchMatches(tournamentId);
+
+            // Show success message
+            alert('Match created successfully!');
+          } catch (error) {
+            console.error('Error creating match:', error);
+            alert(`Error creating match: ${error.message}`);
+          }
+        });
+
+        // Set match result
+        elements.setMatchResultBtn.addEventListener('click', async () => {
+          const matchId = elements.matchIdInput.value;
+          const tournamentId = elements.tournamentSelect.value;
+          const winner = elements.matchWinnerSelect.value;
+          const score = document.getElementById('match-score-input').value.trim();
+
+          if (!winner) {
+            alert('Please select a winner');
+            return;
+          }
+
+          // Create result data
+          const resultData = {
+            winner,
+            score
+          };
+
+          try {
+            console.log('Setting match result:', resultData);
+
+            // Get token from authentication
+            const token = getToken ? getToken() : localStorage.getItem('virtual_betting_token');
+
+            // Send request
+            const response = await fetch(API.matchResult(tournamentId, matchId), {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': token ? `Bearer ${token}` : ''
+              },
+              body: JSON.stringify(resultData),
+              credentials: 'include'
+            });
+
+            if (!response.ok) {
+              const error = await response.json();
+              throw new Error(error.error || 'Failed to set match result');
+            }
+
+            // Close modal
+            elements.matchResultModal.classList.add('hidden');
+
+            // Refresh matches
+            fetchMatches(tournamentId);
+
+            // Show success message
+            alert('Match result set successfully!');
+          } catch (error) {
+            console.error('Error setting match result:', error);
+            alert(`Error setting match result: ${error.message}`);
+          }
+        });
+
+        // Add team to existing tournament
+        elements.addTeamBtn.addEventListener('click', () => {
+          if (!state.selectedTournament) return;
+
+          elements.tournamentIdInput.value = state.selectedTournament;
+          document.getElementById('new-team-name-input').value = '';
+          document.getElementById('new-team-description-input').value = '';
+
+          elements.addTeamModal.classList.remove('hidden');
+        });
+
+        // Add team to tournament
+        elements.addTeamToTournamentBtn.addEventListener('click', async () => {
+          const tournamentId = elements.tournamentIdInput.value;
+          const teamName = document.getElementById('new-team-name-input').value.trim();
+          const teamDescription = document.getElementById('new-team-description-input').value.trim();
+
+          if (!teamName) {
+            alert('Team name is required');
+            return;
+          }
+
+          try {
+            // First get existing teams
+            const token = getToken ? getToken() : localStorage.getItem('virtual_betting_token');
+
+            const response = await fetch(API.tournament(tournamentId), {
+              headers: {
+                'Authorization': token ? `Bearer ${token}` : ''
+              },
+              credentials: 'include'
+            });
+
+            if (!response.ok) {
+              throw new Error('Failed to fetch tournament');
+            }
+
+            const data = await response.json();
+            const tournament = data.tournament;
+
+            // Check if team name already exists
+            if (tournament.teams.some(team => team.name === teamName)) {
+              alert('A team with this name already exists in the tournament');
+              return;
+            }
+
+            // Add new team to existing teams
+            const updatedTeams = [
+              ...tournament.teams,
+              { name: teamName, description: teamDescription }
+            ];
+
+            // Update teams
+            const updateResponse = await fetch(API.tournamentTeams(tournamentId), {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': token ? `Bearer ${token}` : ''
+              },
+              body: JSON.stringify({ teams: updatedTeams }),
+              credentials: 'include'
+            });
+
+            if (!updateResponse.ok) {
+              const error = await updateResponse.json();
+              throw new Error(error.error || 'Failed to update teams');
+            }
+
+            // Close modal
+            elements.addTeamModal.classList.add('hidden');
+
+            // Refresh tournament details
+            fetchTournamentDetails(tournamentId);
+
+            // Show success message
+            alert('Team added successfully!');
+          } catch (error) {
+            console.error('Error adding team:', error);
+            alert(`Error adding team: ${error.message}`);
+          }
+        });
+
+        // Set tournament results
+        elements.setResultsBtn.addEventListener('click', async () => {
+          if (!state.selectedTournament || !state.tournamentDetails) return;
+
+          // Get rankings from form
+          const rankingInputs = document.querySelectorAll('.ranking-input');
+          const rankings = [];
+
+          rankingInputs.forEach(input => {
+            const teamName = input.getAttribute('data-team');
+            const rank = parseInt(input.value);
+
+            if (teamName && !isNaN(rank) && rank > 0) {
+              rankings.push({ teamName, rank });
+            }
+          });
+
+          if (rankings.length !== state.tournamentDetails.teams.length) {
+            alert('Please provide rankings for all teams');
+            return;
+          }
+
+          try {
+            // Get token for authentication
+            const token = getToken ? getToken() : localStorage.getItem('virtual_betting_token');
+
+            // Send request
+            const response = await fetch(API.tournamentResults(state.selectedTournament), {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': token ? `Bearer ${token}` : ''
+              },
+              body: JSON.stringify({ rankings }),
+              credentials: 'include'
+            });
+
+            if (!response.ok) {
+              const error = await response.json();
+              throw new Error(error.error || 'Failed to set tournament results');
+            }
+
+            // Refresh tournament details
+            fetchTournamentDetails(state.selectedTournament);
+
+            // Show success message
+            alert('Tournament results set successfully!');
+          } catch (error) {
+            console.error('Error setting tournament results:', error);
+            alert(`Error setting tournament results: ${error.message}`);
+          }
+        });
+
+      }
       
       // Fetch all tournaments
       async function fetchTournaments() {
@@ -795,16 +1350,27 @@
             </div>
           `;
           
-          const response = await fetch(API.tournaments);
+          // Get token for authentication
+          const token = getToken ? getToken() : localStorage.getItem('virtual_betting_token');
+          
+          const response = await fetch(API.tournaments, {
+            headers: {
+              'Authorization': token ? `Bearer ${token}` : ''
+            },
+            credentials: 'include'
+          });
+          
           if (!response.ok) {
             throw new Error('Failed to fetch tournaments');
           }
           
           const data = await response.json();
+          console.log('Tournaments received:', data);
           state.tournaments = data.tournaments || [];
           
           renderTournaments();
         } catch (error) {
+          console.error('Error fetching tournaments:', error);
           elements.tournamentListContainer.innerHTML = `
             <div class="card">
               <div class="card-body text-center">
@@ -818,7 +1384,16 @@
       // Fetch tournaments for select dropdown
       async function fetchTournamentSelectOptions() {
         try {
-          const response = await fetch(API.tournaments);
+          // Get token for authentication
+          const token = getToken ? getToken() : localStorage.getItem('virtual_betting_token');
+          
+          const response = await fetch(API.tournaments, {
+            headers: {
+              'Authorization': token ? `Bearer ${token}` : ''
+            },
+            credentials: 'include'
+          });
+          
           if (!response.ok) {
             throw new Error('Failed to fetch tournaments');
           }
@@ -851,7 +1426,16 @@
           elements.tournamentDetails.classList.remove('hidden');
           elements.tournamentListContainer.classList.add('hidden');
           
-          const response = await fetch(API.tournament(tournamentId));
+          // Get token for authentication
+          const token = getToken ? getToken() : localStorage.getItem('virtual_betting_token');
+          
+          const response = await fetch(API.tournament(tournamentId), {
+            headers: {
+              'Authorization': token ? `Bearer ${token}` : ''
+            },
+            credentials: 'include'
+          });
+          
           if (!response.ok) {
             throw new Error('Failed to fetch tournament details');
           }
@@ -862,6 +1446,7 @@
           
           renderTournamentDetails();
         } catch (error) {
+          console.error('Error fetching tournament details:', error);
           elements.tournamentDetails.innerHTML = `
             <div class="card">
               <div class="card-body text-center">
@@ -888,7 +1473,16 @@
             </div>
           `;
           
-          const response = await fetch(API.tournamentMatches(tournamentId));
+          // Get token for authentication
+          const token = getToken ? getToken() : localStorage.getItem('virtual_betting_token');
+          
+          const response = await fetch(API.tournamentMatches(tournamentId), {
+            headers: {
+              'Authorization': token ? `Bearer ${token}` : ''
+            },
+            credentials: 'include'
+          });
+          
           if (!response.ok) {
             throw new Error('Failed to fetch matches');
           }
@@ -898,6 +1492,7 @@
           
           renderMatches();
         } catch (error) {
+          console.error('Error fetching matches:', error);
           elements.matchListContainer.innerHTML = `
             <div class="card">
               <div class="card-body text-center">
@@ -917,7 +1512,16 @@
             </div>
           `;
           
-          const response = await fetch(API.eventsByType('overallWinner'));
+          // Get token for authentication
+          const token = getToken ? getToken() : localStorage.getItem('virtual_betting_token');
+          
+          const response = await fetch(API.eventsByType('overallWinner'), {
+            headers: {
+              'Authorization': token ? `Bearer ${token}` : ''
+            },
+            credentials: 'include'
+          });
+          
           if (!response.ok) {
             throw new Error('Failed to fetch overall winner events');
           }
@@ -927,6 +1531,7 @@
           
           renderOverallWinnerEvents();
         } catch (error) {
+          console.error('Error fetching overall winner events:', error);
           elements.overallWinnerListContainer.innerHTML = `
             <div class="card">
               <div class="card-body text-center">
@@ -1317,8 +1922,15 @@
         }
       }
       
+      // Helper function to get token (if not provided by auth.js)
+      function getToken() {
+        return localStorage.getItem('virtual_betting_token');
+      }
+      
       // Initialize the application
       document.addEventListener('DOMContentLoaded', () => {
+        console.log('Admin panel initialized');
+        
         // Load initial data
         fetchTournaments();
         

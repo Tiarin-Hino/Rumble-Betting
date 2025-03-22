@@ -1,10 +1,10 @@
 // routes/tournaments.js
 const express = require('express');
 const router = express.Router();
-const { body, param, query, validationResult } = require('express-validator');
+const { body, validationResult } = require('express-validator');
 const Tournament = require('../models/tournament');
 const Event = require('../models/event');
-const { isAuthenticated, isAdmin } = require('../middleware/auth');
+const { isAdmin } = require('../middleware/auth');
 
 // ========== PUBLIC ROUTES ==========
 

@@ -1,5 +1,9 @@
 // Main application logic
 
+function isAuthenticated() {
+  return localStorage.getItem('virtual_betting_auth_status') === 'true' && !!getUserData();
+}
+
 // Helper function to safely get DOM elements
 function getElement(id) {
   const element = document.getElementById(id);

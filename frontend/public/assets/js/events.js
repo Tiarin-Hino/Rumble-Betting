@@ -1,5 +1,9 @@
 // Events related functions
 
+function isAuthenticated() {
+  return localStorage.getItem('virtual_betting_auth_status') === 'true' && !!getUserData();
+}
+
 // Fetch all events
 async function fetchEvents() {
     try {
