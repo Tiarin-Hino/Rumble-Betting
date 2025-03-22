@@ -1,4 +1,10 @@
-FROM node:16-alpine
+FROM node:16
+
+# Install bcrypt dependencies on Debian/Ubuntu
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    python3 \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 

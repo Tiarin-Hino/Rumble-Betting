@@ -1,0 +1,5 @@
+Attaching to betting-backend
+[36mbetting-backend |[0m Attempting to connect to Redis at: redis://redis:6379
+[36mbetting-backend |[0m Successfully connected to Redis
+[36mbetting-backend |[0m Attempting to connect to Redis at: redis://redis:6379
+[36mbetting-backend |[0m Successfully connected to Redis

@@ -9,9 +9,11 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://mongodb:27017/virtual_
 const connectOptions = {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 5000,
+  serverSelectionTimeoutMS: 30000,
   socketTimeoutMS: 45000
-};
+}
+.then(() => console.log('MongoDB connected successfully'))
+.catch(err => console.error('MongoDB connection error:', err));
 
 // Connect to MongoDB with retry logic
 const connectWithRetry = () => {

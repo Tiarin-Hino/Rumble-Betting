@@ -55,62 +55,6 @@ db.passwordResetTokens.createIndex({ "token": 1 }, { unique: true });
 db.passwordResetTokens.createIndex({ "createdAt": 1 }, { expireAfterSeconds: 3600 });
 db.ipRegistry.createIndex({ "ip": 1 }, { unique: true });
 
-// Create admin user if it doesn't exist
-db.users.updateOne(
-  { username: 'admin' },
-  {
-    \$setOnInsert: {
-      username: 'admin',
-      email: 'admin@example.com',
-      password: '$2b$10$X6YH2zuPHx/Ov0xDxrhKSOpvxKXpDngYg9cCv/8jJqTFOOtsNE0NG', // 'admin123'
-      isVerified: true,
-      registrationIP: '127.0.0.1',
-      registrationDate: new Date(),
-      coins: 10000,
-      winRate: 0,
-      isAdmin: true
-    }
-  },
-  { upsert: true }
-);
-
-// Create sample betting events
-db.events.insertMany([
-  {
-    title: 'Team A vs Team B',
-    description: 'Regular season match between Team A and Team B',
-    eventDate: new Date(new Date().getTime() + 3*24*60*60*1000), // 3 days from now
-    status: 'upcoming',
-    options: [
-      { name: 'Team A Win', odds: 1.8 },
-      { name: 'Draw', odds: 3.5 },
-      { name: 'Team B Win', odds: 2.1 }
-    ]
-  },
-  {
-    title: 'Tournament Quarter Finals',
-    description: 'Quarter finals of the annual tournament',
-    eventDate: new Date(new Date().getTime() + 6*24*60*60*1000), // 6 days from now
-    status: 'upcoming',
-    options: [
-      { name: 'Team C Win', odds: 1.5 },
-      { name: 'Draw', odds: 3.8 },
-      { name: 'Team D Win', odds: 2.4 }
-    ]
-  },
-  {
-    title: 'Championship Game',
-    description: 'Final championship game of the season',
-    eventDate: new Date(new Date().getTime() + 14*24*60*60*1000), // 14 days from now
-    status: 'upcoming',
-    options: [
-      { name: 'Team X Win', odds: 2.1 },
-      { name: 'Draw', odds: 4.2 },
-      { name: 'Team Y Win', odds: 1.7 }
-    ]
-  }
-]);
-
 print('Database setup completed successfully!');
 EOF
 
