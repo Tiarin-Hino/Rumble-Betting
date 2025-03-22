@@ -167,7 +167,7 @@
       width: 100%;
       height: 100%;
       background-color: rgba(0,0,0,0.5);
-      display: flex;
+      display: none;
       justify-content: center;
       align-items: center;
       z-index: 1000;
@@ -205,6 +205,12 @@
     
     .hidden {
       display: none !important;
+    }
+
+    .modal-backdrop .modal {
+      display: block;
+      position: relative;
+      z-index: 2001;
     }
     
     /* Loading spinner */
@@ -284,20 +290,12 @@
     }
 
     /* Force the modal to be visible when needed */
-    #new-tournament-modal:not(.hidden) {
-      display: flex !important;
-    }
-
-    #new-tournament-modal.modal-backdrop {
-      z-index: 2000 !important;
-      display: flex !important;
-      justify-content: center !important;
-      align-items: center !important;
-      background-color: rgba(0,0,0,0.5) !important;
-    }
-
-    #new-tournament-modal.modal-backdrop:not(.hidden) {
-      display: flex !important;
+    .modal-backdrop.visible {
+      display: flex;
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+      background-color: rgba(0,0,0,0.5);
     }
 
     #new-tournament-modal .modal {
@@ -669,6 +667,25 @@
       };
       
       // 4. Helper functions
+      function showModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+          modal.classList.remove('hidden');
+          modal.style.display = 'flex';
+          modal.classList.add('visible');
+        }
+      }
+
+      // Function to hide a modal
+      function hideModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+          modal.classList.add('hidden');
+          modal.classList.remove('visible');
+          modal.style.display = 'none';
+        }
+      }
+
       function formatDate(dateString) {
         if (!dateString) return 'N/A';
         const date = new Date(dateString);
@@ -878,8 +895,8 @@
           button.addEventListener('click', () => {
             const modal = button.closest('.modal-backdrop');
             if (modal) {
-              modal.classList.add('hidden');
-              modal.style.display = 'none';
+              const modalId = modal.id;
+              hideModal(modalId);
             }
           });
         });
@@ -888,8 +905,8 @@
         document.querySelectorAll('.modal-backdrop').forEach(modal => {
           modal.addEventListener('click', function(e) {
             if (e.target === this) {
-              this.classList.add('hidden');
-              this.style.display = 'none';
+              const modalId = this.id;
+              hideModal(modalId);
             }
           });
         });
@@ -905,6 +922,7 @@
         
         // New tournament button
         if (elements.newTournamentBtn) {
+          // In the event listener for new tournament button
           elements.newTournamentBtn.addEventListener('click', () => {
             // Reset form
             if (elements.newTournamentForm) {
@@ -912,11 +930,17 @@
             }
             state.newTournamentTeams = [];
             renderNewTournamentTeams();
-            
-            // Show modal
-            if (elements.newTournamentModal) {
-              elements.newTournamentModal.classList.remove('hidden');
-              elements.newTournamentModal.style.display = 'flex';
+
+            // Make sure both the backdrop AND the modal are visible
+            const modal = document.getElementById('new-tournament-modal');
+            if (modal) {
+              modal.classList.remove('hidden');
+              modal.style.display = 'flex';
+              // Make sure the actual modal content is visible too
+              const modalContent = modal.querySelector('.modal');
+              if (modalContent) {
+                modalContent.style.display = 'block';
+              }
             }
           });
         }
