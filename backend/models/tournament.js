@@ -170,12 +170,10 @@ tournamentSchema.statics = {
   
   // Update tournament final rankings and settle the overall winner event
   async setResults(tournamentId, rankings) {
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    
+    // Remove the session-based transaction approach
     try {
       // Get tournament
-      const tournament = await this.findById(tournamentId).session(session);
+      const tournament = await this.findById(tournamentId);
       
       if (!tournament) {
         throw new Error('Tournament not found');
@@ -197,29 +195,29 @@ tournamentSchema.statics = {
       // Update tournament
       tournament.finalRankings = rankings;
       tournament.status = 'finished';
-      await tournament.save({ session });
+      await tournament.save();
       
       // Update overall winner event
       if (tournament.overallWinnerEventId) {
-        const overallEvent = await Event.findById(tournament.overallWinnerEventId).session(session);
+        const Event = mongoose.model('Event');
+        const Bet = mongoose.model('Bet');
+        
+        const overallEvent = await Event.findById(tournament.overallWinnerEventId);
         
         if (overallEvent) {
           overallEvent.status = 'finished';
           overallEvent.result = rankings[0].teamName; // The winner is rank 1
-          await overallEvent.save({ session });
+          await overallEvent.save();
           
-          // Settle bets for this event
-          await Bet.settleEventBets(overallEvent._id, session);
+          // Settle bets for this event without transaction
+          await Bet.settleEventBets(overallEvent._id);
         }
       }
       
-      await session.commitTransaction();
       return { success: true, tournament };
     } catch (error) {
-      await session.abortTransaction();
+      console.error('Error setting tournament results:', error);
       throw error;
-    } finally {
-      session.endSession();
     }
   }
 };

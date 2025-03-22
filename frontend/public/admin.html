@@ -1963,25 +1963,29 @@
             // Get rankings from form
             const rankingInputs = document.querySelectorAll('.ranking-input');
             const rankings = [];
-
+                    
             rankingInputs.forEach(input => {
               const teamName = input.getAttribute('data-team');
               const rank = parseInt(input.value);
-
+            
               if (teamName && !isNaN(rank) && rank > 0) {
                 rankings.push({ teamName, rank });
               }
             });
-
-            if (rankings.length !== tournament.teams.length) {
+          
+            if (rankings.length !== state.tournamentDetails.teams.length) {
               alert('Please provide rankings for all teams');
               return;
             }
-
+          
             try {
               // Get token for authentication
               const token = getToken ? getToken() : localStorage.getItem('virtual_betting_token');
-
+              
+              // Show loading state
+              elements.setResultsBtn.disabled = true;
+              elements.setResultsBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            
               // Send request
               const response = await fetch(API.tournamentResults(state.selectedTournament), {
                 method: 'POST',
@@ -1992,20 +1996,25 @@
                 body: JSON.stringify({ rankings }),
                 credentials: 'include'
               });
-
+            
+              const data = await response.json();
+              
               if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'Failed to set tournament results');
+                throw new Error(data.error || 'Failed to set tournament results');
               }
-
+            
               // Refresh tournament details
               fetchTournamentDetails(state.selectedTournament);
-
+            
               // Show success message
               alert('Tournament results set successfully!');
             } catch (error) {
               console.error('Error setting tournament results:', error);
               alert(`Error setting tournament results: ${error.message}`);
+            } finally {
+              // Reset button state
+              elements.setResultsBtn.disabled = false;
+              elements.setResultsBtn.innerHTML = '<i class="fas fa-trophy"></i> Set Final Results';
             }
           });
         }

@@ -217,33 +217,29 @@ betSchema.statics = {
   async settleEventBets(eventId, session) {
     const Event = mongoose.model('Event');
     const User = mongoose.model('User');
-    
-    // Start a transaction if not provided
-    const useSession = session || await mongoose.startSession();
-    if (!session) useSession.startTransaction();
-    
+
     try {
       // Find the event
-      const event = await Event.findById(eventId).session(useSession);
-      
+      const event = await Event.findById(eventId);
+
       if (!event) {
         throw new Error('Event not found');
       }
-      
+
       if (event.status !== 'finished') {
         throw new Error('Cannot settle bets for an unfinished event');
       }
-      
+
       if (!event.result) {
         throw new Error('Event result is not set');
       }
-      
+
       // Get all active bets for this event
       const activeBets = await this.find({
         eventId: event._id,
         status: 'active'
-      }).session(useSession);
-      
+      });
+
       // Settlement statistics
       const results = {
         eventId: event._id,
@@ -253,47 +249,40 @@ betSchema.statics = {
         losingBets: 0,
         totalPayout: 0
       };
-      
+
       // Process each bet
       for (const bet of activeBets) {
         // Check if bet matches the winner
         const isWinner = bet.selection === event.result;
-        
+
         // Update bet status
         bet.status = isWinner ? 'won' : 'lost';
         bet.settledAt = new Date();
-        
+
         // Process winning bet
         if (isWinner) {
-          const user = await User.findById(bet.userId).session(useSession);
-          
+          const user = await User.findById(bet.userId);
+
           if (user) {
             // Credit winnings
             user.coins += bet.potentialWin;
             results.totalPayout += bet.potentialWin;
-            await user.save({ session: useSession });
+            await user.save();
           }
-          
+
           results.winningBets++;
         } else {
           results.losingBets++;
         }
-        
-        await bet.save({ session: useSession });
+
+        await bet.save();
         results.settledBets++;
       }
-      
-      // Commit transaction if we started it
-      if (!session) await useSession.commitTransaction();
-      
+
       return results;
     } catch (error) {
-      // Abort transaction if we started it
-      if (!session) await useSession.abortTransaction();
+      console.error('Error settling bets:', error);
       throw error;
-    } finally {
-      // End session if we started it
-      if (!session) useSession.endSession();
     }
   },
   
