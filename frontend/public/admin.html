@@ -655,6 +655,8 @@
         events: '/api/events',
         eventsByType: (type) => `/api/events?type=${type}`
       };
+
+      console.log('API endpoints:', API);
       
       // 3. State management
       let state = {
@@ -667,6 +669,12 @@
       };
       
       // 4. Helper functions
+
+      function handleTournamentManage(tournamentId) {
+        console.log('Handle tournament manage called for:', tournamentId);
+        fetchTournamentDetails(tournamentId);
+      }
+
       function showModal(modalId) {
         const modal = document.getElementById(modalId);
         if (modal) {
@@ -1368,40 +1376,57 @@
       // Fetch all tournaments
       async function fetchTournaments() {
         try {
-          elements.tournamentListContainer.innerHTML = `
-            <div class="loading">
-              <div class="spinner"></div>
-            </div>
-          `;
-          
+          if (elements.tournamentListContainer) {
+            elements.tournamentListContainer.innerHTML = `
+              <div class="loading">
+                <div class="spinner"></div>
+              </div>
+            `;
+          }
+
           // Get token for authentication
           const token = getToken ? getToken() : localStorage.getItem('virtual_betting_token');
-          
+
+          // Add debugging
+          console.log('Fetching tournaments from:', API.tournaments);
+
           const response = await fetch(API.tournaments, {
             headers: {
               'Authorization': token ? `Bearer ${token}` : ''
             },
             credentials: 'include'
           });
-          
+
+          console.log('Tournament response status:', response.status);
+
           if (!response.ok) {
-            throw new Error('Failed to fetch tournaments');
+            throw new Error(`Failed to fetch tournaments: ${response.status}`);
           }
-          
+
           const data = await response.json();
-          console.log('Tournaments received:', data);
+          console.log('Tournaments data received:', data);
+
           state.tournaments = data.tournaments || [];
-          
+
           renderTournaments();
         } catch (error) {
           console.error('Error fetching tournaments:', error);
-          elements.tournamentListContainer.innerHTML = `
-            <div class="card">
-              <div class="card-body text-center">
-                <p>Error loading tournaments: ${error.message}</p>
+          if (elements.tournamentListContainer) {
+            elements.tournamentListContainer.innerHTML = `
+              <div class="card">
+                <div class="card-body text-center">
+                  <p>Error loading tournaments: ${error.message}</p>
+                  <button class="btn refresh-tournaments-btn">Try Again</button>
+                </div>
               </div>
-            </div>
-          `;
+            `;
+            
+            // Add event listener to the refresh button
+            const refreshBtn = document.querySelector('.refresh-tournaments-btn');
+            if (refreshBtn) {
+              refreshBtn.addEventListener('click', fetchTournaments);
+            }
+          }
         }
       }
       
@@ -1440,51 +1465,82 @@
       
       // Fetch tournament details
       async function fetchTournamentDetails(tournamentId) {
+        console.log('Fetching details for tournament:', tournamentId);
+
         try {
           // Show loading
-          elements.tournamentDetails.innerHTML = `
-            <div class="loading">
-              <div class="spinner"></div>
-            </div>
-          `;
-          elements.tournamentDetails.classList.remove('hidden');
-          elements.tournamentListContainer.classList.add('hidden');
-          
+          const detailsElement = document.getElementById('tournament-details');
+          if (detailsElement) {
+            detailsElement.innerHTML = `
+              <div class="loading">
+                <div class="spinner"></div>
+              </div>
+            `;
+            detailsElement.classList.remove('hidden');
+            
+            const listContainer = document.getElementById('tournament-list-container');
+            if (listContainer) {
+              listContainer.classList.add('hidden');
+            }
+          }
+
           // Get token for authentication
           const token = getToken ? getToken() : localStorage.getItem('virtual_betting_token');
-          
-          const response = await fetch(API.tournament(tournamentId), {
+
+          const apiUrl = API.tournament(tournamentId);
+          console.log('Fetching from URL:', apiUrl);
+
+          const response = await fetch(apiUrl, {
             headers: {
               'Authorization': token ? `Bearer ${token}` : ''
             },
             credentials: 'include'
           });
-          
+
+          console.log('Tournament details response status:', response.status);
+
           if (!response.ok) {
-            throw new Error('Failed to fetch tournament details');
+            throw new Error(`Failed to fetch tournament details: ${response.status}`);
           }
-          
+
           const data = await response.json();
+          console.log('Tournament details received:', data);
+
           state.tournamentDetails = data.tournament;
           state.selectedTournament = tournamentId;
-          
+
           renderTournamentDetails();
         } catch (error) {
           console.error('Error fetching tournament details:', error);
-          elements.tournamentDetails.innerHTML = `
-            <div class="card">
-              <div class="card-body text-center">
-                <p>Error loading tournament details: ${error.message}</p>
-                <button id="back-to-tournaments-error" class="btn mt-4">Back to Tournaments</button>
+
+          const detailsElement = document.getElementById('tournament-details');
+          if (detailsElement) {
+            detailsElement.innerHTML = `
+              <div class="d-flex justify-between align-center mb-4">
+                <button id="back-to-tournaments" class="btn btn-outline">
+                  <i class="fas fa-arrow-left"></i> Back to Tournaments
+                </button>
               </div>
-            </div>
-          `;
-          
-          document.getElementById('back-to-tournaments-error').addEventListener('click', () => {
-            state.selectedTournament = null;
-            elements.tournamentDetails.classList.add('hidden');
-            elements.tournamentListContainer.classList.remove('hidden');
-          });
+              <div class="card">
+                <div class="card-body text-center">
+                  <p>Error loading tournament details: ${error.message}</p>
+                  <button id="back-to-tournaments-error" class="btn mt-4">Back to Tournaments</button>
+                </div>
+              </div>
+            `;
+            
+            const backBtn = document.getElementById('back-to-tournaments-error');
+            if (backBtn) {
+              backBtn.addEventListener('click', () => {
+                state.selectedTournament = null;
+                detailsElement.classList.add('hidden');
+                const listContainer = document.getElementById('tournament-list-container');
+                if (listContainer) {
+                  listContainer.classList.remove('hidden');
+                }
+              });
+            }
+          }
         }
       }
       
@@ -1568,6 +1624,32 @@
       
       // Render tournaments list
       function renderTournaments() {
+        console.log('Rendering tournaments:', state.tournaments);
+
+        // Make sure the container exists
+        if (!elements.tournamentListContainer) {
+          console.error('Tournament list container not found');
+          return;
+        }
+
+        if (!state.tournaments || !Array.isArray(state.tournaments)) {
+          console.error('Invalid tournaments data:', state.tournaments);
+          elements.tournamentListContainer.innerHTML = `
+            <div class="card">
+              <div class="card-body text-center">
+                <p>Unable to load tournaments. Invalid data received.</p>
+                <button class="btn refresh-tournaments-btn">Try Again</button>
+              </div>
+            </div>
+          `;
+          
+          const refreshBtn = document.querySelector('.refresh-tournaments-btn');
+          if (refreshBtn) {
+            refreshBtn.addEventListener('click', fetchTournaments);
+          }
+          return;
+        }
+
         if (state.tournaments.length === 0) {
           elements.tournamentListContainer.innerHTML = `
             <div class="card">
@@ -1578,7 +1660,7 @@
           `;
           return;
         }
-        
+
         let html = `
           <table>
             <thead>
@@ -1593,7 +1675,7 @@
             </thead>
             <tbody>
         `;
-        
+            
         state.tournaments.forEach(tournament => {
           html += `
             <tr>
@@ -1603,14 +1685,14 @@
               <td>${formatDate(tournament.endDate)}</td>
               <td>${tournament.teams?.length || 0}</td>
               <td>
-                <button class="btn btn-sm view-tournament-btn" data-id="${tournament._id}">
+                <button class="btn btn-sm view-tournament-btn" data-id="${tournament._id}" onclick="handleTournamentManage('${tournament._id}')">
                   Manage
                 </button>
               </td>
             </tr>
           `;
         });
-        
+
         html += `
             </tbody>
           </table>
@@ -1618,10 +1700,11 @@
         
         elements.tournamentListContainer.innerHTML = html;
         
-        // Add event listeners to view buttons
+        // Add direct event listeners after rendering
         document.querySelectorAll('.view-tournament-btn').forEach(button => {
-          button.addEventListener('click', () => {
-            const tournamentId = button.getAttribute('data-id');
+          button.addEventListener('click', function() {
+            const tournamentId = this.getAttribute('data-id');
+            console.log('Manage button clicked for tournament:', tournamentId);
             fetchTournamentDetails(tournamentId);
           });
         });
@@ -1629,81 +1712,140 @@
       
       // Render tournament details
       function renderTournamentDetails() {
-        const tournament = state.tournamentDetails;
-        
-        if (!tournament) {
+        console.log('Rendering tournament details:', state.tournamentDetails);
+
+        // Get the container element
+        const tournamentDetails = document.getElementById('tournament-details');
+        if (!tournamentDetails) {
+          console.error('Tournament details container not found');
           return;
         }
-        
-        // Update tournament header information
-        document.getElementById('tournament-name').textContent = tournament.name;
-        document.getElementById('tournament-description').textContent = tournament.description || 'No description provided';
-        document.getElementById('tournament-start-date').textContent = formatDate(tournament.startDate);
-        document.getElementById('tournament-end-date').textContent = formatDate(tournament.endDate);
-        document.getElementById('tournament-team-count').textContent = tournament.teams?.length || 0;
-        document.getElementById('tournament-status-text').textContent = tournament.status;
-        document.getElementById('tournament-status').className = `badge badge-${getStatusClass(tournament.status)}`;
-        document.getElementById('tournament-status').textContent = tournament.status;
-        
-        // Render teams
-        let teamsHtml = `
-          <table>
-            <thead>
-              <tr>
-                <th>Team Name</th>
-                <th>Description</th>
-              </tr>
-            </thead>
-            <tbody>
+
+        // Check if we have valid tournament data
+        if (!state.tournamentDetails) {
+          console.error('No tournament details to render');
+          tournamentDetails.innerHTML = `
+            <div class="d-flex justify-between align-center mb-4">
+              <button id="back-to-tournaments" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i> Back to Tournaments
+              </button>
+            </div>
+            <div class="card">
+              <div class="card-body text-center">
+                <p>No tournament details available.</p>
+              </div>
+            </div>
+          `;
+          
+          addBackButtonListener();
+          return;
+        }
+
+        // Determine which object in the response contains the tournament data
+        // Based on your console logs, it appears to be nested in a structure
+        const tournament = state.tournamentDetails.tournament || state.tournamentDetails;
+
+        // Generate HTML for tournament details
+        let html = `
+          <div class="d-flex justify-between align-center mb-4">
+            <button id="back-to-tournaments" class="btn btn-outline">
+              <i class="fas fa-arrow-left"></i> Back to Tournaments
+            </button>
+            <span id="tournament-status" class="badge badge-${getStatusClass(tournament.status || 'upcoming')}">${tournament.status || 'Upcoming'}</span>
+          </div>
+
+          <div class="card mb-4">
+            <div class="card-header">
+              <h3 id="tournament-name">${tournament.name || 'Unnamed Tournament'}</h3>
+            </div>
+            <div class="card-body">
+              <p id="tournament-description" class="mb-2">${tournament.description || 'No description provided'}</p>
+              <div class="grid grid-2">
+                <div>
+                  <p><strong>Start Date:</strong> <span id="tournament-start-date">${formatDate(tournament.startDate)}</span></p>
+                  <p><strong>End Date:</strong> <span id="tournament-end-date">${formatDate(tournament.endDate)}</span></p>
+                </div>
+                <div>
+                  <p><strong>Total Teams:</strong> <span id="tournament-team-count">${tournament.teams?.length || 0}</span></p>
+                  <p><strong>Status:</strong> <span id="tournament-status-text">${tournament.status || 'Upcoming'}</span></p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-2">
+            <div class="card">
+              <div class="card-header">
+                <h3>Teams</h3>
+              </div>
+              <div class="card-body" id="team-list">
         `;
-        
+              
+        // Add teams list
         if (tournament.teams && tournament.teams.length > 0) {
+          html += `
+            <table>
+              <thead>
+                <tr>
+                  <th>Team Name</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+          `;
+              
           tournament.teams.forEach(team => {
-            teamsHtml += `
+            html += `
               <tr>
                 <td>${team.name}</td>
                 <td>${team.description || 'N/A'}</td>
               </tr>
             `;
           });
+
+          html += `
+              </tbody>
+            </table>
+          `;
         } else {
-          teamsHtml += `
-            <tr>
-              <td colspan="2" class="text-center">No teams added yet</td>
-            </tr>
-          `;
+          html += `<p class="text-center">No teams added yet</p>`;
         }
-        
-        teamsHtml += `
-            </tbody>
-          </table>
+
+        html += `
+                <button id="add-team-btn" class="btn mt-4">
+                  <i class="fas fa-plus"></i> Add Team
+                </button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3>Tournament Results</h3>
+              </div>
+              <div class="card-body">
+                <div id="results-form">
         `;
-        
-        document.getElementById('team-list').innerHTML = teamsHtml;
-        
-        // Render rankings form
-        let rankingsHtml = '';
-        
+                
+        // Add rankings form or display
         if (tournament.status === 'finished') {
-          rankingsHtml = `
-            <div class="card-body">
-              <h4>Final Rankings</h4>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Rank</th>
-                    <th>Team</th>
-                  </tr>
-                </thead>
-                <tbody>
+          html += `
+            <h4>Final Rankings</h4>
+            <table>
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Team</th>
+                </tr>
+              </thead>
+              <tbody>
           `;
-          
+              
           if (tournament.finalRankings && tournament.finalRankings.length > 0) {
             // Sort by rank
             const sortedRankings = [...tournament.finalRankings].sort((a, b) => a.rank - b.rank);
-            
+
             sortedRankings.forEach(ranking => {
-              rankingsHtml += `
+              html += `
                 <tr>
                   <td>${ranking.rank}</td>
                   <td>${ranking.teamName}</td>
@@ -1711,20 +1853,19 @@
               `;
             });
           } else {
-            rankingsHtml += `
+            html += `
               <tr>
                 <td colspan="2" class="text-center">No rankings set</td>
               </tr>
             `;
           }
-          
-          rankingsHtml += `
-                </tbody>
-              </table>
-            </div>
+
+          html += `
+              </tbody>
+            </table>
           `;
         } else {
-          rankingsHtml = `
+          html += `
             <p class="mb-2">Set the final rankings for this tournament:</p>
             <table>
               <thead>
@@ -1735,10 +1876,10 @@
               </thead>
               <tbody>
           `;
-          
+              
           if (tournament.teams && tournament.teams.length > 0) {
             tournament.teams.forEach((team, index) => {
-              rankingsHtml += `
+              html += `
                 <tr>
                   <td>${team.name}</td>
                   <td>
@@ -1748,23 +1889,148 @@
               `;
             });
           } else {
-            rankingsHtml += `
+            html += `
               <tr>
                 <td colspan="2" class="text-center">No teams to rank</td>
               </tr>
             `;
           }
-          
-          rankingsHtml += `
+
+          html += `
               </tbody>
             </table>
+            <button id="set-results-btn" class="btn btn-success mt-4" ${tournament.status === 'finished' ? 'style="display:none;"' : ''}>
+              <i class="fas fa-trophy"></i> Set Final Results
+            </button>
           `;
         }
+
+        html += `
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
         
-        document.getElementById('ranking-list').innerHTML = rankingsHtml;
+        // Set the HTML content
+        tournamentDetails.innerHTML = html;
+        tournamentDetails.classList.remove('hidden');
         
-        // Show/hide results button based on status
-        elements.setResultsBtn.style.display = tournament.status === 'finished' ? 'none' : 'block';
+        // Hide the tournament list container
+        const listContainer = document.getElementById('tournament-list-container');
+        if (listContainer) {
+          listContainer.classList.add('hidden');
+        }
+
+        // Add event listeners
+        addBackButtonListener();
+
+        // Add team button
+        const addTeamBtn = document.getElementById('add-team-btn');
+        if (addTeamBtn) {
+          addTeamBtn.addEventListener('click', () => {
+            if (!state.selectedTournament) return;
+
+            const tournamentIdInput = document.getElementById('tournament-id-input');
+            if (tournamentIdInput) {
+              tournamentIdInput.value = state.selectedTournament;
+            }
+
+            const newTeamNameInput = document.getElementById('new-team-name-input');
+            if (newTeamNameInput) {
+              newTeamNameInput.value = '';
+            }
+
+            const newTeamDescriptionInput = document.getElementById('new-team-description-input');
+            if (newTeamDescriptionInput) {
+              newTeamDescriptionInput.value = '';
+            }
+
+            const addTeamModal = document.getElementById('add-team-modal');
+            if (addTeamModal) {
+              addTeamModal.classList.remove('hidden');
+              addTeamModal.style.display = 'flex';
+            }
+          });
+        }
+
+        // Set results button
+        const setResultsBtn = document.getElementById('set-results-btn');
+        if (setResultsBtn) {
+          setResultsBtn.addEventListener('click', async () => {
+            if (!state.selectedTournament || !state.tournamentDetails) return;
+
+            // Get rankings from form
+            const rankingInputs = document.querySelectorAll('.ranking-input');
+            const rankings = [];
+
+            rankingInputs.forEach(input => {
+              const teamName = input.getAttribute('data-team');
+              const rank = parseInt(input.value);
+
+              if (teamName && !isNaN(rank) && rank > 0) {
+                rankings.push({ teamName, rank });
+              }
+            });
+
+            if (rankings.length !== tournament.teams.length) {
+              alert('Please provide rankings for all teams');
+              return;
+            }
+
+            try {
+              // Get token for authentication
+              const token = getToken ? getToken() : localStorage.getItem('virtual_betting_token');
+
+              // Send request
+              const response = await fetch(API.tournamentResults(state.selectedTournament), {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': token ? `Bearer ${token}` : ''
+                },
+                body: JSON.stringify({ rankings }),
+                credentials: 'include'
+              });
+
+              if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to set tournament results');
+              }
+
+              // Refresh tournament details
+              fetchTournamentDetails(state.selectedTournament);
+
+              // Show success message
+              alert('Tournament results set successfully!');
+            } catch (error) {
+              console.error('Error setting tournament results:', error);
+              alert(`Error setting tournament results: ${error.message}`);
+            }
+          });
+        }
+
+        console.log('Tournament details rendered successfully');
+      }
+
+      // Helper function to add the back button listener
+      function addBackButtonListener() {
+        const backBtn = document.getElementById('back-to-tournaments');
+        if (backBtn) {
+          backBtn.addEventListener('click', () => {
+            state.selectedTournament = null;
+
+            const tournamentDetails = document.getElementById('tournament-details');
+            if (tournamentDetails) {
+              tournamentDetails.classList.add('hidden');
+            }
+
+            const listContainer = document.getElementById('tournament-list-container');
+            if (listContainer) {
+              listContainer.classList.remove('hidden');
+            }
+          });
+        }
       }
       
       // Render new tournament teams
