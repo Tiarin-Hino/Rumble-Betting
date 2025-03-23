@@ -1081,6 +1081,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  navMyBets.addEventListener('click', function() {
+    console.log('My Bets clicked');
+    showSection('mybets-section');
+    loadMyBets(); // Directly call the load function
+  });
+
   // Check server health on load
   checkServerHealth().then(isHealthy => {
     if (!isHealthy) {
