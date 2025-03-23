@@ -292,130 +292,91 @@ function fixLeaderboard() {
   return true;
 }
 
-// Initialize the application
-function initApp() {
-  console.log('App initializing...');
-
-  // Check if user is authenticated and update UI
-  updateAuthUI();
-
-  // Load home page content
-  displayUpcomingEventsPreview();
-
+function setupEventListeners() {
   // Navigation event listeners
-  if (navHome) {
-    navHome.addEventListener('click', (e) => {
-      e.preventDefault();
-      showSection('home-section');
-    });
-  }
+  addSafeEventListener('nav-home', 'click', (e) => {
+    e.preventDefault();
+    showSection('home-section');
+  });
 
-  if (navEvents) {
-    navEvents.addEventListener('click', (e) => {
-      e.preventDefault();
+  addSafeEventListener('nav-events', 'click', (e) => {
+    e.preventDefault();
+    showSection('events-section');
+  });
+
+  addSafeEventListener('nav-leaderboard', 'click', (e) => {
+    e.preventDefault();
+    console.log('Leaderboard clicked');
+    showSection('leaderboard-section');
+    // Call our fix function after a short delay
+    setTimeout(fixLeaderboard, 100);
+  });
+
+  addSafeEventListener('nav-mybets', 'click', (e) => {
+    e.preventDefault();
+    if (!isAuthenticated()) {
+      openModal(loginModal);
+      return;
+    }
+    showSection('mybets-section');
+  });
+
+  // Action buttons
+  addSafeEventListener('get-started-btn', 'click', (e) => {
+    e.preventDefault();
+    if (isAuthenticated()) {
       showSection('events-section');
-    });
-  }
-
-  if (navLeaderboard) {
-    navLeaderboard.addEventListener('click', (e) => {
-      e.preventDefault();
-      console.log('Leaderboard clicked');
-      showSection('leaderboard-section');
-
-      // Call our fix function after a short delay
-      setTimeout(fixLeaderboard, 100);
-    });
-  }
-
-  if (navMyBets) {
-    navMyBets.addEventListener('click', (e) => {
-      e.preventDefault();
-      if (!isAuthenticated()) {
-        openModal(loginModal);
-        return;
-      }
-      showSection('mybets-section');
-    });
-  }
-
-  // Get started button
-  if (getStartedBtn) {
-    getStartedBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-
-      if (isAuthenticated()) {
-        showSection('events-section');
-      } else {
-        openModal(registerModal);
-      }
-    });
-  }
+    } else {
+      openModal(registerModal);
+    }
+  });
 
   // Login/Register/Logout buttons
-  if (loginBtn) {
-    loginBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      openModal(loginModal);
-    });
-  }
+  addSafeEventListener('login-btn', 'click', (e) => {
+    e.preventDefault();
+    openModal(loginModal);
+  });
 
-  if (registerBtn) {
-    registerBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      openModal(registerModal);
-    });
-  }
+  addSafeEventListener('register-btn', 'click', (e) => {
+    e.preventDefault();
+    openModal(registerModal);
+  });
 
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', (e) => {
-      e.preventDefault();
+  addSafeEventListener('logout-btn', 'click', (e) => {
+    e.preventDefault();
+    // Clear user session
+    clearUserSession();
+    // Update UI
+    updateAuthUI();
+    // Go to home page
+    showSection('home-section');
+    alert('You have been logged out successfully.');
+  });
 
-      // Clear user session
-      clearUserSession();
+  // Modal navigation
+  addSafeEventListener('switch-to-register', 'click', (e) => {
+    e.preventDefault();
+    closeModal(loginModal);
+    openModal(registerModal);
+  });
 
-      // Update UI
-      updateAuthUI();
+  addSafeEventListener('switch-to-login', 'click', (e) => {
+    e.preventDefault();
+    closeModal(registerModal);
+    openModal(loginModal);
+  });
 
-      // Go to home page
-      showSection('home-section');
+  addSafeEventListener('forgot-password', 'click', (e) => {
+    e.preventDefault();
+    closeModal(loginModal);
+    openModal(resetModal);
+  });
 
-      alert('You have been logged out successfully.');
-    });
-  }
-
-  // Switch between modals
-  if (switchToRegister) {
-    switchToRegister.addEventListener('click', (e) => {
-      e.preventDefault();
-      closeModal(loginModal);
-      openModal(registerModal);
-    });
-  }
-
-  if (switchToLogin) {
-    switchToLogin.addEventListener('click', (e) => {
-      e.preventDefault();
-      closeModal(registerModal);
-      openModal(loginModal);
-    });
-  }
-
-  if (forgotPassword) {
-    forgotPassword.addEventListener('click', (e) => {
-      e.preventDefault();
-      closeModal(loginModal);
-      openModal(resetModal);
-    });
-  }
-
-  if (backToLogin) {
-    backToLogin.addEventListener('click', (e) => {
-      e.preventDefault();
-      closeModal(resetModal);
-      openModal(loginModal);
-    });
-  }
+  addSafeEventListener('back-to-login', 'click', (e) => {
+    e.preventDefault();
+    closeModal(resetModal);
+    openModal(loginModal);
+  });
 
   // Close buttons for modals
   document.querySelectorAll('.modal .close').forEach(closeBtn => {
@@ -431,64 +392,68 @@ function initApp() {
     }
   });
 
-  // Event filters
-  document.querySelectorAll('.event-filter').forEach(filter => {
-    filter.addEventListener('click', function () {
-      const filterType = this.getAttribute('data-filter');
-      loadEvents(filterType);
-    });
+  // Form submissions - use once: true to prevent duplicate submissions
+  const formHandlers = [
+    { id: 'login-form', handler: handleLogin },
+    { id: 'register-form', handler: handleRegister },
+    { id: 'reset-form', handler: handleResetPassword },
+    { id: 'place-bet-form', handler: handlePlaceBet }
+  ];
+
+  formHandlers.forEach(({ id, handler }) => {
+    const form = document.getElementById(id);
+    if (form) {
+      console.log(`Setting up form handler for ${id}`);
+      form.addEventListener('submit', handler);
+    }
   });
-
-  // Bet filters
-  document.querySelectorAll('.bet-filter').forEach(filter => {
-    filter.addEventListener('click', function () {
-      const filterType = this.getAttribute('data-filter');
-      loadMyBets(filterType);
-    });
-  });
-
-  // Form submissions
-  if (registerForm) {
-    registerForm.addEventListener('submit', handleRegister);
-  }
-
-  if (loginForm) {
-    loginForm.addEventListener('submit', handleLogin);
-  }
-
-  if (resetFormElement) {
-    resetFormElement.addEventListener('submit', handleResetPassword);
-  }
-
-  if (placeBetForm) {
-    placeBetForm.addEventListener('submit', handlePlaceBet);
-  }
 
   // Place bet form calculation
   const betAmount = getElement('bet-amount');
   const betOption = getElement('bet-option');
 
-  // Update potential winnings when amount or option changes
   if (betAmount && betOption) {
     betAmount.addEventListener('input', updatePotentialWinnings);
     betOption.addEventListener('change', updatePotentialWinnings);
   }
 
+  // View Results button handler
   document.addEventListener('click', function (e) {
-    // Check if the clicked element is a View Results button
     if (e.target && e.target.classList.contains('view-results-btn')) {
       e.preventDefault();
       const eventId = e.target.getAttribute('data-event-id');
-      console.log('View Results clicked for event:', eventId);
-      // Call the openEventDetailsModal function
       if (typeof openEventDetailsModal === 'function') {
         openEventDetailsModal(eventId);
       } else {
         console.error('openEventDetailsModal function not found');
-        alert('View Results feature is temporarily unavailable');
       }
     }
   });
+}
+
+// Initialize the application
+function initApp() {
+  // Prevent multiple initializations
+  if (window._appInitialized) {
+    console.warn('App already initialized, skipping duplicate initialization');
+    return;
+  }
+  window._appInitialized = true;
+
+  console.log('App initializing...');
+
+  // Check if user is authenticated and update UI
+  updateAuthUI();
+
+  // Load home page content
+  displayUpcomingEventsPreview();
+
+  // Set up all event listeners
+  setupEventListeners();
+
+  // Check persistence of auth state
+  console.log('Initial auth state:', isAuthenticated());
+  console.log('User data from localStorage:', localStorage.getItem(USER_DATA_KEY));
 }
 
 // Handle registration form submission
@@ -556,57 +521,123 @@ async function handleRegister(e) {
   }
 }
 
-// Handle login form submission
+// Add after initApp
+function checkAuthState() {
+  console.group('Authentication State Check');
+  console.log('isAuthenticated():', isAuthenticated());
+  console.log('AUTH_STATUS_KEY:', localStorage.getItem(AUTH_STATUS_KEY));
+  console.log('USER_DATA_KEY:', localStorage.getItem(USER_DATA_KEY));
+  console.log('TOKEN_KEY:', localStorage.getItem(TOKEN_KEY));
+
+  const userData = getUserData();
+  console.log('User Data:', userData);
+
+  // Check UI elements
+  const elements = [
+    { id: 'nav-mybets-container', shouldBeVisible: isAuthenticated() },
+    { id: 'login-container', shouldBeVisible: !isAuthenticated() },
+    { id: 'register-container', shouldBeVisible: !isAuthenticated() },
+    { id: 'logout-container', shouldBeVisible: isAuthenticated() },
+    { id: 'username-display', shouldBeVisible: isAuthenticated() }
+  ];
+
+  elements.forEach(({ id, shouldBeVisible }) => {
+    const element = document.getElementById(id);
+    console.log(`Element ${id}: exists=${!!element}, shouldBeVisible=${shouldBeVisible}, isVisible=${element && !element.classList.contains('removed')}`);
+  });
+
+  console.groupEnd();
+}
+
+// Prevent multiple submissions
+let isLoginSubmitting = false;
+
 async function handleLogin(e) {
   e.preventDefault();
+  console.log('Login form submitted');
 
-  // Get form data
-  const email = getElement('login-email').value;
-  const password = getElement('login-password').value;
-
-  // Reset form errors
-  resetForm(loginForm);
-  clearMessage(loginMessage);
-
-  // Validate form
-  let isValid = true;
-
-  if (!isValidEmail(email)) {
-    showError('login-email', 'Please enter a valid email address');
-    isValid = false;
-  }
-
-  if (password.length < 1) {
-    showError('login-password', 'Please enter your password');
-    isValid = false;
-  }
-
-  if (!isValid) {
+  // Prevent duplicate submissions
+  if (isLoginSubmitting) {
+    console.log('Already processing login, preventing duplicate');
     return;
   }
 
-  // Submit login
+  isLoginSubmitting = true;
+
+  // Disable submit button
+  const submitButton = e.target.querySelector('button[type="submit"]');
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.innerHTML = 'Logging in...';
+  }
+
   try {
+    // Get form data
+    const email = getElement('login-email').value;
+    const password = getElement('login-password').value;
+
+    // Reset form errors
+    resetForm(loginForm);
+    clearMessage(loginMessage);
+
+    // Validate form
+    let isValid = true;
+
+    if (!isValidEmail(email)) {
+      showError('login-email', 'Please enter a valid email address');
+      isValid = false;
+    }
+
+    if (password.length < 1) {
+      showError('login-password', 'Please enter your password');
+      isValid = false;
+    }
+
+    if (!isValid) {
+      return;
+    }
+
+    // Submit login
     showMessage(loginMessage, 'Logging in...', 'info');
 
+    console.log('Sending login request for:', email);
     const response = await loginUser({
       email,
       password
     });
 
+    console.log('Login response received:', response);
     showMessage(loginMessage, response.message || 'Login successful!', 'success');
 
     // Update UI for logged in user
     updateAuthUI();
 
-    // Close modal and redirect
+    // Close modal and redirect after a delay
     setTimeout(() => {
       closeModal(loginModal);
+
+      // Check auth state again
+      console.log('Authentication state after login:', isAuthenticated());
+
+      // Force UI update again
+      updateAuthUI();
+
       showSection('events-section');
-    }, 1000);
+    }, 1500);
 
   } catch (error) {
+    console.error('Login error:', error);
     showMessage(loginMessage, error.message || 'Login failed. Please check your credentials.', 'error');
+  } finally {
+    // Re-enable submit button and reset submission flag
+    setTimeout(() => {
+      isLoginSubmitting = false;
+
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.innerHTML = 'Login';
+      }
+    }, 2000);
   }
 }
 
@@ -1058,6 +1089,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+window.debugAuth = checkAuthState;
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', initApp);
 

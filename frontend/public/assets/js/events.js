@@ -370,6 +370,34 @@ async function openPlaceBetModal(eventId) {
   }
 }
 
+document.addEventListener('DOMContentLoaded', function () {
+  // Create event details section if it doesn't exist
+  let eventDetailsSection = document.getElementById('event-details');
+  if (!eventDetailsSection) {
+    console.error('Event details section not found, creating one');
+    eventDetailsSection = document.createElement('section');
+    eventDetailsSection.id = 'event-details';
+    eventDetailsSection.className = 'hidden';
+    document.body.appendChild(eventDetailsSection);
+  }
+
+  // Create the container if it doesn't exist
+  if (!eventDetailsSection.querySelector('.event-details-container')) {
+    const container = document.createElement('div');
+    container.className = 'event-details-container';
+    eventDetailsSection.appendChild(container);
+  }
+
+  // Add event listeners to all View Results buttons
+  document.addEventListener('click', function (e) {
+    if (e.target && e.target.classList.contains('view-results-btn')) {
+      e.preventDefault();
+      const eventId = e.target.getAttribute('data-event-id');
+      openEventDetailsModal(eventId);
+    }
+  });
+});
+
 // Update potential winnings calculation
 function updatePotentialWinnings() {
   const optionSelect = document.getElementById('bet-option');
@@ -383,83 +411,121 @@ function updatePotentialWinnings() {
 }
 
 // Open event details modal
-async function openEventDetailsModal(eventId) {
-  try {
-    console.log('Opening event details for ID:', eventId);
+function openEventDetailsModal(eventId) {
+  console.log('Opening event details for:', eventId);
 
-    // Fetch event details
-    const event = await fetchEventById(eventId);
-    console.log('Fetched event:', event);
+  // Get or create event details section
+  let eventDetailsSection = document.getElementById('event-details');
+  if (!eventDetailsSection) {
+    console.error('Event details section not found, creating one');
+    eventDetailsSection = document.createElement('section');
+    eventDetailsSection.id = 'event-details';
+    eventDetailsSection.className = 'hidden';
+    document.body.appendChild(eventDetailsSection);
+  }
 
-    // Get the modal container
-    const modal = document.getElementById('event-details');
-    if (!modal) {
-      console.error('Event details modal not found in the DOM');
-      return;
-    }
+  // Get or create the container
+  let container = eventDetailsSection.querySelector('.event-details-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.className = 'event-details-container';
+    eventDetailsSection.appendChild(container);
+  }
 
-    // Get the modal body
-    const modalBody = modal.querySelector('.modal-body');
-    if (!modalBody) {
-      console.error('Modal body not found');
-      return;
-    }
+  // Show loading state
+  container.innerHTML = '<div style="text-align:center;padding:20px;">Loading event details...</div>';
+  eventDetailsSection.classList.remove('hidden');
 
-    // Set the title
-    const titleElement = modal.querySelector('.event-title');
-    if (titleElement) {
-      titleElement.textContent = event.title;
-    }
+  // Fetch event data with proper error handling
+  fetch(`${API_ENDPOINTS.events}/${eventId}`)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      if (!data || !data.event) {
+        throw new Error('Invalid data format received from server');
+      }
 
-    // Create content
-    let resultHtml = '';
-    if (event.status === 'finished' && event.result) {
-      resultHtml = `
-        <div class="event-result">
-          <h3>Result</h3>
-          <p class="result-option">${event.result}</p>
+      const event = data.event;
+
+      // Create content
+      container.innerHTML = `
+        <div class="event-details-card">
+          <span class="close">&times;</span>
+          <h2>${event.title}</h2>
+          <p><strong>Date:</strong> ${formatEventDate(event.eventDate)}</p>
+          <p><strong>Description:</strong> ${event.description}</p>
+          ${event.result ? `<p><strong>Result:</strong> ${event.result}</p>` : ''}
+          
+          <h3>Options</h3>
+          <ul>
+            ${event.options.map(option => `
+              <li>${option.name} (${option.odds}x) 
+                ${event.result === option.name ? '<strong>WINNER</strong>' : ''}
+              </li>
+            `).join('')}
+          </ul>
+          
+          <div style="text-align:right;margin-top:20px;">
+            <button id="close-event-details" class="btn">Close</button>
+          </div>
         </div>
       `;
-    }
 
-    // Options content
-    let optionsHtml = '<div class="event-options-list">';
-    if (event.options && event.options.length > 0) {
-      event.options.forEach(option => {
-        const isWinner = event.status === 'finished' && event.result === option.name;
-        const optionClass = isWinner ? 'winning-option' : '';
-
-        optionsHtml += `
-          <div class="event-option ${optionClass}">
-            <span class="option-name">${option.name}</span>
-            <span class="option-odds">${option.odds}x</span>
-            ${isWinner ? '<span class="winner-badge">WINNER</span>' : ''}
-          </div>
-        `;
+      // Add event listeners for close buttons
+      const closeButtons = container.querySelectorAll('.close, #close-event-details');
+      closeButtons.forEach(button => {
+        button.addEventListener('click', function () {
+          eventDetailsSection.classList.add('hidden');
+        });
       });
-    }
-    optionsHtml += '</div>';
-
-    // Set modal content
-    modalBody.innerHTML = `
-      <div class="event-details-content">
-        <p class="event-date">${formatEventDate(event.eventDate)}</p>
-        <p class="event-description">${event.description}</p>
-        ${resultHtml}
-        <h3>Betting Options</h3>
-        ${optionsHtml}
-      </div>
-    `;
-
-    // Show the modal
-    modal.classList.remove('hidden');
-    console.log('Event details modal displayed');
-
-  } catch (error) {
-    console.error('Error opening event details:', error);
-    alert('Failed to load event details. Please try again.');
-  }
+    })
+    .catch(error => {
+      console.error('Error fetching event:', error);
+      container.innerHTML = `
+        <div style="text-align:center;padding:20px;color:red;">
+          <p>Error loading event details: ${error.message}</p>
+          <button class="btn" onclick="document.getElementById('event-details').classList.add('hidden')">
+            Close
+          </button>
+        </div>
+      `;
+    });
 }
+
+// Set up event detail modal behavior when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+  // Create event details section if it doesn't exist
+  let eventDetailsSection = document.getElementById('event-details');
+  if (!eventDetailsSection) {
+    console.log('Creating event details section');
+    eventDetailsSection = document.createElement('section');
+    eventDetailsSection.id = 'event-details';
+    eventDetailsSection.className = 'hidden';
+    document.body.appendChild(eventDetailsSection);
+  }
+
+  // Create the container if it doesn't exist
+  let container = eventDetailsSection.querySelector('.event-details-container');
+  if (!container) {
+    console.log('Creating event details container');
+    container = document.createElement('div');
+    container.className = 'event-details-container';
+    eventDetailsSection.appendChild(container);
+  }
+
+  // Delegate event handler for all view results buttons
+  document.addEventListener('click', function(e) {
+    if (e.target && e.target.classList.contains('view-results-btn')) {
+      e.preventDefault();
+      const eventId = e.target.getAttribute('data-event-id');
+      openEventDetailsModal(eventId);
+    }
+  });
+});
 
 window.openEventDetailsModal = openEventDetailsModal;
 window.fetchEventById = fetchEventById;

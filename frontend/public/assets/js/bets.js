@@ -1,6 +1,4 @@
 // Bets related functions
-function isAuthenticated() {}
-function getUserData() {}
 
 // Load leaderboard data
 async function loadLeaderboard() {
@@ -253,7 +251,7 @@ async function loadMyBets() {
 async function placeBet(betData) {
   try {
     console.log('Placing bet with data:', betData);
-    
+
     // Make the API request with proper error handling
     const response = await fetch(API_ENDPOINTS.placeBet, {
       method: 'POST',
@@ -264,19 +262,19 @@ async function placeBet(betData) {
       },
       body: JSON.stringify(betData)
     });
-    
+
     // First handle non-OK responses
     if (!response.ok) {
       // Try to parse error message from JSON
       let errorMsg = `Error ${response.status}`;
-      
+
       // Check content type to handle HTML errors
       const contentType = response.headers.get('content-type');
       if (contentType && contentType.includes('text/html')) {
         const html = await response.text();
         throw new Error('Server returned HTML instead of JSON. The server might be experiencing issues.');
       }
-      
+
       // Try to get a JSON error message
       try {
         const errorData = await response.json();
@@ -286,18 +284,18 @@ async function placeBet(betData) {
         const errorText = await response.text();
         errorMsg = errorText || errorMsg;
       }
-      
+
       throw new Error(errorMsg);
     }
-    
+
     // Parse the successful response
     const data = await response.json();
-    
+
     // Update user coins in local storage
     if (data.userCoins !== undefined) {
       updateUserData({ coins: data.userCoins });
     }
-    
+
     return data;
   } catch (error) {
     console.error('Place bet error:', error);
@@ -306,93 +304,116 @@ async function placeBet(betData) {
 }
 
 // Handle place bet form submission
+// Prevent multiple submissions
+let isPlacingBet = false;
+
 async function handlePlaceBet(e) {
   e.preventDefault();
-  
-  // Check if user is authenticated
-  if (!isAuthenticated()) {
-    openModal(loginModal);
+  console.log('Place bet form submitted');
+
+  // Prevent duplicate submissions
+  if (isPlacingBet) {
+    console.log('Already processing bet, preventing duplicate');
     return;
   }
-  
-  // Get form data
-  const eventId = document.getElementById('bet-event-id').value;
-  const option = document.getElementById('bet-option').value;
-  const amount = parseInt(document.getElementById('bet-amount').value);
-  
-  // Get the bet message element for feedback
-  const betMessage = document.getElementById('bet-message');
-  if (betMessage) {
-    betMessage.className = 'message hidden';
+
+  isPlacingBet = true;
+
+  // Disable submit button
+  const submitButton = e.target.querySelector('button[type="submit"]');
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.innerHTML = 'Processing...';
   }
-  
-  // Validate form
-  let isValid = true;
-  
-  if (!eventId) {
-    showMessage(betMessage, 'Invalid event', 'error');
-    isValid = false;
-  }
-  
-  if (!option) {
-    showMessage(betMessage, 'Please select a betting option', 'error');
-    isValid = false;
-  }
-  
-  if (isNaN(amount) || amount < 10) {
-    showMessage(betMessage, 'Bet amount must be at least 10 coins', 'error');
-    isValid = false;
-  }
-  
-  const userData = getUserData();
-  if (amount > userData.coins) {
-    showMessage(betMessage, 'Insufficient coins', 'error');
-    isValid = false;
-  }
-  
-  if (!isValid) {
-    return;
-  }
-  
-  // Disable the button to prevent multiple submissions
-  const placeBetBtn = document.querySelector('#place-bet-form button[type="submit"]');
-  if (placeBetBtn) {
-    placeBetBtn.disabled = true;
-    placeBetBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-  }
-  
-  // Place bet
+
   try {
+    // Check if user is authenticated
+    if (!isAuthenticated()) {
+      openModal(loginModal);
+      return;
+    }
+
+    // Get form data
+    const eventId = document.getElementById('bet-event-id').value;
+    const selection = document.getElementById('bet-option').value;
+    const amount = parseInt(document.getElementById('bet-amount').value);
+
+    // Get the bet message element
+    const betMessage = document.getElementById('bet-message');
+
+    // Reset message
+    if (betMessage) {
+      betMessage.className = 'message hidden';
+    }
+
+    // Validate form
+    let isValid = true;
+
+    if (!eventId) {
+      showMessage(betMessage, 'Invalid event', 'error');
+      isValid = false;
+    }
+
+    if (!selection) {
+      showMessage(betMessage, 'Please select a betting option', 'error');
+      isValid = false;
+    }
+
+    if (isNaN(amount) || amount < 10) {
+      showMessage(betMessage, 'Bet amount must be at least 10 coins', 'error');
+      isValid = false;
+    }
+
+    const userData = getUserData();
+    if (!userData || amount > userData.coins) {
+      showMessage(betMessage, 'Insufficient coins', 'error');
+      isValid = false;
+    }
+
+    if (!isValid) {
+      return;
+    }
+
+    // Place bet
     showMessage(betMessage, 'Placing your bet...', 'info');
-    
+
+    console.log('Sending bet request:', { eventId, selection, amount });
     const result = await placeBet({
       eventId,
-      selection: option, // Use selection field name
+      selection,
       amount
     });
-    
-    console.log('Bet placement successful:', result);
+
+    console.log('Bet placed successfully:', result);
     showMessage(betMessage, 'Bet placed successfully!', 'success');
-    
-    // Update UI
-    updateAuthUI();
-    
+
+    // Update user coins
+    if (result.userCoins !== undefined) {
+      updateUserData({ coins: result.userCoins });
+      updateAuthUI();
+    }
+
     // Close modal and redirect to my bets
     setTimeout(() => {
       closeModal(document.getElementById('place-bet-modal'));
       showSection('mybets-section');
       loadMyBets(); // Reload bets to include the new one
     }, 1500);
-    
+
   } catch (error) {
-    console.error('Bet placement handling error:', error);
+    console.error('Bet placement error:', error);
+    const betMessage = document.getElementById('bet-message');
     showMessage(betMessage, error.message || 'Failed to place bet. Please try again.', 'error');
   } finally {
-    // Re-enable the button
-    if (placeBetBtn) {
-      placeBetBtn.disabled = false;
-      placeBetBtn.innerHTML = 'Place Bet';
-    }
+    // Reset state after delay
+    setTimeout(() => {
+      isPlacingBet = false;
+
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.innerHTML = 'Place Bet';
+      }
+    }, 2000);
   }
 }
 

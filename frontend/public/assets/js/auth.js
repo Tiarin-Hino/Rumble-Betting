@@ -2,7 +2,7 @@
 const AUTH_ENDPOINTS = {
   register: `${API_BASE_URL}/users/register`,
   login: `${API_BASE_URL}/users/login`,
-  logout: `${API_BASE_URL}/users/logout`, 
+  logout: `${API_BASE_URL}/users/logout`,
   resetPassword: `${API_BASE_URL}/users/reset-password`,
   profile: `${API_BASE_URL}/users/profile`,
   verifyAuth: `${API_BASE_URL}/users/verify-auth`
@@ -11,6 +11,14 @@ const AUTH_ENDPOINTS = {
 // Storage keys
 const AUTH_STATUS_KEY = 'virtual_betting_auth_status';
 const TOKEN_KEY = 'virtual_betting_token';
+const USER_DATA_KEY = 'virtual_betting_user';
+
+const DEBUG = true; // Set to false in production
+function debugLog(...args) {
+  if (DEBUG) {
+    console.log(...args);
+  }
+}
 
 // Get stored user data
 function getUserData() {
@@ -20,22 +28,51 @@ function getUserData() {
 
 // Save user data after login/registration (enhanced security)
 function saveUserSession(data) {
-  // Store only non-sensitive user data in localStorage
-  const userData = {
-    id: data.user.id,
-    username: data.user.username,
-    email: data.user.email,
-    coins: data.user.coins,
-    isAdmin: data.user.isAdmin,
-    lastUpdated: new Date().toISOString()
-  };
-  
-  localStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
-  localStorage.setItem(AUTH_STATUS_KEY, 'true');
-  
-  // Store token if available (for backward compatibility)
-  if (data.token) {
-    localStorage.setItem(TOKEN_KEY, data.token);
+  console.log('Saving user session data:', data); // Debug logging
+
+  try {
+    // Handle different response formats
+    let userData;
+
+    if (data.user) {
+      // Format: { user: {...}, token: "..." }
+      userData = {
+        id: data.user.id,
+        username: data.user.username,
+        email: data.user.email,
+        coins: data.user.coins,
+        isAdmin: data.user.isAdmin,
+        lastUpdated: new Date().toISOString()
+      };
+    } else if (data.id || data.username) {
+      // Format: { id: "...", username: "...", ... }
+      userData = {
+        id: data.id,
+        username: data.username,
+        email: data.email,
+        coins: data.coins,
+        isAdmin: data.isAdmin,
+        lastUpdated: new Date().toISOString()
+      };
+    } else {
+      console.error('Invalid user data format:', data);
+      throw new Error('Invalid user data format');
+    }
+
+    // Store user data and auth status
+    localStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
+    localStorage.setItem(AUTH_STATUS_KEY, 'true');
+
+    // Store token if available
+    if (data.token) {
+      localStorage.setItem(TOKEN_KEY, data.token);
+    }
+
+    console.log('User session saved successfully');
+    return true;
+  } catch (error) {
+    console.error('Error saving user session:', error);
+    return false;
   }
 }
 
@@ -58,7 +95,7 @@ async function verifyAuthentication() {
     if (!isAuthenticated()) {
       return false;
     }
-    
+
     const response = await fetch(AUTH_ENDPOINTS.verifyAuth, {
       method: 'GET',
       credentials: 'include', // Important for cookies
@@ -66,7 +103,7 @@ async function verifyAuthentication() {
         'Content-Type': 'application/json'
       }
     });
-    
+
     if (!response.ok) {
       // Clear local auth if server says we're not authenticated
       if (response.status === 401) {
@@ -74,7 +111,7 @@ async function verifyAuthentication() {
       }
       return false;
     }
-    
+
     return true;
   } catch (error) {
     console.error('Auth verification error:', error);
@@ -93,13 +130,13 @@ async function registerUser(userData) {
       },
       body: JSON.stringify(userData)
     });
-    
+
     const data = await response.json();
-    
+
     if (!response.ok) {
       throw new Error(data.error || 'Registration failed');
     }
-    
+
     return data;
   } catch (error) {
     console.error('Registration error:', error);
@@ -110,43 +147,47 @@ async function registerUser(userData) {
 // Login user (with enhanced security)
 async function loginUser(credentials) {
   try {
+    console.log('Attempting login with:', credentials.email);
+
     const response = await fetch(AUTH_ENDPOINTS.login, {
       method: 'POST',
-      credentials: 'include', // Needed for cookies
+      credentials: 'include', // For cookies
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(credentials)
     });
 
-    // Check for HTTP errors *before* parsing JSON
+    // Handle non-OK responses
     if (!response.ok) {
-      // Attempt to read the response as text first, in case it's an HTML error page.
       const text = await response.text();
       let errorMessage = `HTTP Error: ${response.status} ${response.statusText}`;
 
-      // Try to parse as JSON, but handle potential errors.
       try {
-          const errorData = JSON.parse(text);
-          errorMessage = errorData.message || errorMessage; // Prefer server's message
+        const errorData = JSON.parse(text);
+        errorMessage = errorData.message || errorData.error || errorMessage;
       } catch (parseError) {
-        // If it's not JSON, use the text we read earlier (likely HTML)
-        errorMessage += `\nResponse Body: ${text}`; // Append the raw text to help debug
+        errorMessage += `\nResponse Body: ${text}`;
       }
       throw new Error(errorMessage);
     }
 
-    // *Now* it's safe to parse as JSON, since we know it's a successful (2xx) response.
     const data = await response.json();
+    console.log('Login successful, response:', data);
 
-    // Save user session data
-    saveUserSession(data);
+    // Save user session
+    const saved = saveUserSession(data);
+    if (!saved) {
+      throw new Error('Failed to save user session');
+    }
+
+    // Force UI update
+    updateAuthUI();
 
     return data;
-
   } catch (error) {
     console.error('Login error:', error);
-    throw error; // Re-throw the error so calling functions can handle it.
+    throw error;
   }
 }
 
@@ -158,10 +199,10 @@ async function logoutUser() {
       method: 'POST',
       credentials: 'include' // Needed for cookies
     });
-    
+
     // Clear local storage regardless of server response
     clearUserSession();
-    
+
     return true;
   } catch (error) {
     console.error('Logout error:', error);
@@ -181,13 +222,13 @@ async function resetPassword(resetData) {
       },
       body: JSON.stringify(resetData)
     });
-    
+
     const data = await response.json();
-    
+
     if (!response.ok) {
       throw new Error(data.error || 'Password reset failed');
     }
-    
+
     return data;
   } catch (error) {
     console.error('Password reset error:', error);
@@ -202,7 +243,7 @@ async function getUserProfile() {
     if (!isAuthenticated()) {
       throw new Error('Not authenticated');
     }
-    
+
     const response = await fetch(AUTH_ENDPOINTS.profile, {
       method: 'GET',
       credentials: 'include',
@@ -210,9 +251,9 @@ async function getUserProfile() {
         'Content-Type': 'application/json'
       }
     });
-    
+
     const data = await response.json();
-    
+
     if (!response.ok) {
       if (response.status === 401) {
         // Token expired or invalid, logout
@@ -220,7 +261,7 @@ async function getUserProfile() {
       }
       throw new Error(data.error || 'Failed to get profile');
     }
-    
+
     // Update stored user data with latest from server
     const updatedUserData = {
       id: data.user.id,
@@ -230,9 +271,9 @@ async function getUserProfile() {
       isAdmin: data.user.isAdmin,
       lastUpdated: new Date().toISOString()
     };
-    
+
     localStorage.setItem(USER_DATA_KEY, JSON.stringify(updatedUserData));
-    
+
     return data.user;
   } catch (error) {
     console.error('Get profile error:', error);
@@ -253,49 +294,74 @@ function updateUserData(updates) {
 
 // Update authentication UI elements
 function updateAuthUI() {
+  console.log('Updating authentication UI');
+
   const isLoggedIn = isAuthenticated();
   const userData = getUserData();
-  
-  // Use the safer approach from main.js improvement
+
+  console.log('Authentication state:', isLoggedIn, userData);
+
+  // Update navigation items visibility
   const elements = [
     { id: 'nav-mybets-container', show: isLoggedIn },
     { id: 'login-container', show: !isLoggedIn },
     { id: 'register-container', show: !isLoggedIn },
     { id: 'logout-container', show: isLoggedIn }
   ];
-  
+
   elements.forEach(({ id, show }) => {
     const element = document.getElementById(id);
     if (element) {
-      element.classList.toggle('removed', !show);
-    }
-  });
-  
-  // Update user data if logged in
-  if (isLoggedIn && userData) {
-    const userCoinsElements = document.querySelectorAll('#user-coins, #user-balance');
-    userCoinsElements.forEach(element => {
-      if (element) element.textContent = userData.coins;
-    });
-    
-    // Add username display if needed
-    if (!document.getElementById('username-display')) {
-      const nav = document.querySelector('nav ul');
-      const usernameItem = document.createElement('li');
-      usernameItem.className = 'auth-item';
-      usernameItem.innerHTML = `<span id="username-display">${userData.username} (${userData.coins} coins)</span>`;
-      
-      // Insert before logout
-      const logoutContainer = document.getElementById('logout-container');
-      if (logoutContainer && nav) {
-        nav.insertBefore(usernameItem, logoutContainer);
+      console.log(`Setting ${id} visibility to ${show ? 'visible' : 'hidden'}`);
+
+      if (show) {
+        element.classList.remove('removed');
+        element.classList.remove('hidden');
+        element.style.display = ''; // Reset display property
+      } else {
+        element.classList.add('removed');
+        element.style.display = 'none';
       }
     } else {
-      // Update existing display
-      const display = document.getElementById('username-display');
-      if (display) {
-        display.textContent = `${userData.username} (${userData.coins} coins)`;
+      console.warn(`Element with ID '${id}' not found`);
+    }
+  });
+
+  // Update user data displays if logged in
+  if (isLoggedIn && userData) {
+    console.log('Updating user data displays with:', userData);
+
+    // Update coin displays
+    const userCoinsElements = document.querySelectorAll('#user-coins, #user-balance');
+    userCoinsElements.forEach(element => {
+      if (element) {
+        element.textContent = userData.coins || 0;
+        console.log(`Updated coin display: ${element.id} = ${userData.coins}`);
       }
+    });
+
+    // Add or update username display
+    try {
+      const usernameDisplay = document.getElementById('username-display');
+      if (!usernameDisplay) {
+        const nav = document.querySelector('nav ul');
+        if (nav) {
+          const usernameItem = document.createElement('li');
+          usernameItem.className = 'auth-item';
+          usernameItem.innerHTML = `<span id="username-display">${userData.username} (${userData.coins || 0} coins)</span>`;
+
+          const logoutContainer = document.getElementById('logout-container');
+          if (logoutContainer) {
+            nav.insertBefore(usernameItem, logoutContainer);
+            console.log('Created new username display element');
+          }
+        }
+      } else {
+        usernameDisplay.textContent = `${userData.username} (${userData.coins || 0} coins)`;
+        console.log('Updated existing username display');
+      }
+    } catch (e) {
+      console.error('Error updating username display:', e);
     }
   }
 }

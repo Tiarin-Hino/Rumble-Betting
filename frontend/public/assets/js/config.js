@@ -5,7 +5,6 @@ const API_BASE_URL = '/api'; // Use relative URL for same-domain deployment
 
 // Constants
 const USER_TOKEN_KEY = 'virtual_betting_token';
-const USER_DATA_KEY = 'virtual_betting_user';
 
 // API Endpoints
 const API_ENDPOINTS = {
@@ -33,3 +32,14 @@ const API_ENDPOINTS = {
   // Leaderboard endpoint 
   leaderboard: `${API_BASE_URL}/users/leaderboard`
 };
+
+console.log('API configuration loaded');
+console.log('Base URL:', API_BASE_URL);
+
+// Debug endpoints
+if (window.location.hostname === 'localhost') {
+  console.log('Running in development environment - API endpoints:', API_ENDPOINTS);
+}
+
+// Make API endpoints immutable to prevent accidental modification
+Object.freeze(API_ENDPOINTS);
