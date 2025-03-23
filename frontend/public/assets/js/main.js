@@ -1,9 +1,5 @@
 // Main application logic
 
-function isAuthenticated() {
-  return localStorage.getItem('virtual_betting_auth_status') === 'true' && !!getUserData();
-}
-
 // Helper function to safely get DOM elements
 function getElement(id) {
   const element = document.getElementById(id);
@@ -477,6 +473,22 @@ function initApp() {
     betAmount.addEventListener('input', updatePotentialWinnings);
     betOption.addEventListener('change', updatePotentialWinnings);
   }
+
+  document.addEventListener('click', function (e) {
+    // Check if the clicked element is a View Results button
+    if (e.target && e.target.classList.contains('view-results-btn')) {
+      e.preventDefault();
+      const eventId = e.target.getAttribute('data-event-id');
+      console.log('View Results clicked for event:', eventId);
+      // Call the openEventDetailsModal function
+      if (typeof openEventDetailsModal === 'function') {
+        openEventDetailsModal(eventId);
+      } else {
+        console.error('openEventDetailsModal function not found');
+        alert('View Results feature is temporarily unavailable');
+      }
+    }
+  });
 }
 
 // Handle registration form submission
@@ -943,9 +955,100 @@ function setupPlaceBetForm() {
   });
 }
 
+// Helper function to populate content (adjust based on your HTML structure)
+function populateEventDetailsContent(container, event) {
+  // This should match the structure expected by your CSS
+  let resultHtml = '';
+  if (event.status === 'finished' && event.result) {
+    resultHtml = `<p><strong>Result:</strong> ${event.result}</p>`;
+  }
+
+  // Create content that matches your existing modals
+  container.innerHTML = `
+      <div class="modal-content">
+          <div class="modal-header">
+              <h2>${event.title}</h2>
+              <span class="close">&times;</span>
+          </div>
+          <div class="modal-body">
+              <p>${event.description}</p>
+              ${resultHtml}
+              <div class="betting-options">
+                  ${createBettingOptionsHtml(event.options, event.result)}
+              </div>
+          </div>
+      </div>
+  `;
+
+  // Add close handler to the newly created close button
+  const closeBtn = container.querySelector('.close');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', function () {
+      document.getElementById('event-details').style.display = 'none';
+    });
+  }
+}
+
+function createBettingOptionsHtml(options, result) {
+  if (!options || !options.length) return '';
+
+  let html = '<h3>Betting Options</h3><ul class="options-list">';
+
+  options.forEach(option => {
+    const isWinner = result && option.name === result;
+    html += `
+          <li class="${isWinner ? 'winner' : ''}">
+              ${option.name} (${option.odds}x) ${isWinner ? ' - WINNER' : ''}
+          </li>
+      `;
+  });
+
+  html += '</ul>';
+  return html;
+}
+
 // Initialize this on page load
 document.addEventListener('DOMContentLoaded', () => {
   setupPlaceBetForm();
+
+  // Find all View Results buttons
+  const viewResultsButtons = document.querySelectorAll('.view-results-btn');
+
+  viewResultsButtons.forEach(button => {
+    button.addEventListener('click', function (e) {
+      e.preventDefault();
+      const eventId = this.getAttribute('data-event-id');
+
+      // This should match the pattern used by your Place Bet button
+      const eventDetailsModal = document.getElementById('event-details');
+
+      // Fetch and populate the modal content
+      fetchEventById(eventId)
+        .then(event => {
+          // Populate the modal content similar to how Place Bet modal is populated
+          const detailsContainer = eventDetailsModal.querySelector('.event-details-container');
+
+          // Create content for the modal (adjust based on your HTML structure)
+          // This should match the structure of your Place Bet modal
+          populateEventDetailsContent(detailsContainer, event);
+
+          // Show the modal - use the same method as Place Bet
+          eventDetailsModal.style.display = 'block';
+        })
+        .catch(error => {
+          console.error('Error fetching event details:', error);
+          alert('Failed to load event details');
+        });
+    });
+  });
+
+  // Close button handler (should match your Place Bet modal close behavior)
+  const closeButtons = document.querySelectorAll('#event-details .close');
+  closeButtons.forEach(button => {
+    button.addEventListener('click', function () {
+      document.getElementById('event-details').style.display = 'none';
+    });
+  });
 
   // Check server health on load
   checkServerHealth().then(isHealthy => {
@@ -957,3 +1060,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', initApp);
+

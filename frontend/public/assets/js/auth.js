@@ -10,6 +10,7 @@ const AUTH_ENDPOINTS = {
 
 // Storage keys
 const AUTH_STATUS_KEY = 'virtual_betting_auth_status';
+const TOKEN_KEY = 'virtual_betting_token';
 
 // Get stored user data
 function getUserData() {
@@ -32,17 +33,21 @@ function saveUserSession(data) {
   localStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
   localStorage.setItem(AUTH_STATUS_KEY, 'true');
   
-  // Note: Token is now handled via HTTP-only cookies set by the server
+  // Store token if available (for backward compatibility)
+  if (data.token) {
+    localStorage.setItem(TOKEN_KEY, data.token);
+  }
 }
 
 // Clear user session on logout
 function clearUserSession() {
   localStorage.removeItem(USER_DATA_KEY);
   localStorage.removeItem(AUTH_STATUS_KEY);
+  localStorage.removeItem(TOKEN_KEY);
 }
 
 // Check if user is authenticated (basic check)
-function isLocallyAuthenticated() {
+function isAuthenticated() {
   return localStorage.getItem(AUTH_STATUS_KEY) === 'true' && !!getUserData();
 }
 
@@ -50,7 +55,7 @@ function isLocallyAuthenticated() {
 async function verifyAuthentication() {
   try {
     // Only do the API check if locally authenticated first
-    if (!isLocallyAuthenticated()) {
+    if (!isAuthenticated()) {
       return false;
     }
     
@@ -73,7 +78,7 @@ async function verifyAuthentication() {
     return true;
   } catch (error) {
     console.error('Auth verification error:', error);
-    return isLocallyAuthenticated(); // Fallback to local check if network error
+    return isAuthenticated(); // Fallback to local check if network error
   }
 }
 
@@ -194,7 +199,7 @@ async function resetPassword(resetData) {
 async function getUserProfile() {
   try {
     // Check if authenticated first
-    if (!isLocallyAuthenticated()) {
+    if (!isAuthenticated()) {
       throw new Error('Not authenticated');
     }
     
@@ -248,7 +253,7 @@ function updateUserData(updates) {
 
 // Update authentication UI elements
 function updateAuthUI() {
-  const isLoggedIn = isLocallyAuthenticated();
+  const isLoggedIn = isAuthenticated();
   const userData = getUserData();
   
   // Use the safer approach from main.js improvement
@@ -294,3 +299,10 @@ function updateAuthUI() {
     }
   }
 }
+
+// Helper function to get a secure token (for API calls)
+function getToken() {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+window.updateAuthUI = updateAuthUI;

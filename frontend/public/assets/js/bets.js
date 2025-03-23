@@ -1,14 +1,6 @@
 // Bets related functions
-
-// Authentication helpers
-function isAuthenticated() {
-  return localStorage.getItem('virtual_betting_auth_status') === 'true' && !!getUserData();
-}
-
-function getUserData() {
-  const userData = localStorage.getItem('virtual_betting_user');
-  return userData ? JSON.parse(userData) : null;
-}
+function isAuthenticated() {}
+function getUserData() {}
 
 // Load leaderboard data
 async function loadLeaderboard() {
