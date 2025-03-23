@@ -68,65 +68,64 @@
             <div id="events-container">
                 <div class="loading">Loading events...</div>
             </div>
+        </section>
+        <!-- My Bets Section -->
+        <section id="mybets-section" class="hidden">
+            <h2>My Bets</h2>
+            <p>Track your betting activity and results</p>
 
-            <!-- My Bets Section -->
-            <section id="mybets-section" class="hidden">
-                <h2>My Bets</h2>
-                <p>Track your betting activity and results</p>
-
-                <div class="user-stats card">
-                    <h3>Your Stats</h3>
-                    <div class="stats-container">
-                        <div class="stat">
-                            <span class="stat-value" id="user-coins">0</span>
-                            <span class="stat-label">Coins</span>
-                        </div>
-                        <div class="stat">
-                            <span class="stat-value" id="total-bets">0</span>
-                            <span class="stat-label">Total Bets</span>
-                        </div>
-                        <div class="stat">
-                            <span class="stat-value" id="win-rate">0%</span>
-                            <span class="stat-label">Win Rate</span>
-                        </div>
+            <div class="user-stats card">
+                <h3>Your Stats</h3>
+                <div class="stats-container">
+                    <div class="stat">
+                        <span class="stat-value" id="user-coins">0</span>
+                        <span class="stat-label">Coins</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value" id="total-bets">0</span>
+                        <span class="stat-label">Total Bets</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value" id="win-rate">0%</span>
+                        <span class="stat-label">Win Rate</span>
                     </div>
                 </div>
+            </div>
 
-                <div id="mybets-container">
-                    <div class="loading">Loading your bets...</div>
-                </div>
-            </section>
+            <div id="mybets-container">
+                <div class="loading">Loading your bets...</div>
+            </div>
+        </section>
 
-            <!-- Leaderboard Section -->
-            <section id="leaderboard-section" class="hidden">
-                <h2>Leaderboard</h2>
-                <p>Top performers based on virtual coins earned</p>
+        <!-- Leaderboard Section -->
+        <section id="leaderboard-section" class="hidden">
+            <h2>Leaderboard</h2>
+            <p>Top performers based on virtual coins earned</p>
 
-                <div class="card">
-                    <table class="leaderboard-table">
-                        <thead>
-                            <tr>
-                                <th>Rank</th>
-                                <th>Player</th>
-                                <th>Virtual Coins</th>
-                                <th>Points Bet</th>
-                            </tr>
-                        </thead>
-                        <tbody id="leaderboard-body">
-                            <tr>
-                                <td colspan="4" class="loading">Loading leaderboard...</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
+            <div class="card">
+                <table class="leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Player</th>
+                            <th>Virtual Coins</th>
+                            <th>Points Bet</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-body">
+                        <tr>
+                            <td colspan="4" class="loading">Loading leaderboard...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
 
-            <!-- Event Details Section (Popup) -->
-            <section id="event-details" class="hidden">
-                <div class="event-details-container">
-                    <!-- Event details will be loaded here dynamically -->
-                </div>
-            </section>
+        <!-- Event Details Section (Popup) -->
+        <section id="event-details" class="hidden">
+            <div class="event-details-container">
+                <!-- Event details will be loaded here dynamically -->
+            </div>
         </section>
     </main>
 
