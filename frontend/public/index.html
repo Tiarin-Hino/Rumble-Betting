@@ -258,21 +258,5 @@
     <script src="assets/js/events.js"></script>
     <script src="assets/js/bets.js"></script>
     <script src="assets/js/main.js"></script>
-    <script>
-      if (typeof isAuthenticated !== 'function') {
-        function isAuthenticated() {
-          return localStorage.getItem('virtual_betting_auth_status') === 'true' && !!getUserData();
-        }
-      }
-      // Check if user is admin
-      if (isAuthenticated() && getUserData().isAdmin) {
-        // Add admin panel link
-        document.getElementById('nav-items').innerHTML += `
-          <li class="nav-item">
-            <a href="/admin" class="nav-link">Admin Panel</a>
-          </li>
-        `;
-      }
-    </script>
 </body>
 </html>
